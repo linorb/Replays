@@ -75,7 +75,7 @@ for i in range(1,len(days)):
     all_bins = np.concatenate((all_bins, bins[i]))
 
 number_of_bins = 24
-wide_bin_factor = 1
+wide_bin_factor = 2
 all_bins_wider = tools.activity_loading.wide_binning(all_bins, number_of_bins, \
                  wide_bin_factor)
 
