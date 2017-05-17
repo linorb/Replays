@@ -1,16 +1,18 @@
 import numpy as np
 import os
 from matplotlib.pyplot import *
+import scipy.stats
 
 from bambi.tools import matlab
-from bambi.tools.activity_loading import order_events_into_trials
+from bambi.tools.activity_loading import order_events_into_trials, create_training_data, wide_binning
+from zivlab.analysis.place_cells import find_place_cells
 
 EDGE_BINS = [0, 1, 2, 21, 22, 23]
 FRAME_RATE = 20 #Hz
 MOUSE = [6, 4, 1, 1]
 CAGE = [4, 7, 11, 13]
 ENV = 'envA'
-DAYS = '12345678'
+DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 
 def load_session_data(session_dir):
@@ -25,8 +27,16 @@ def load_session_data(session_dir):
     frame_log = matlab.load_frame_log_file(os.path.join(session_dir,log_filename))
     movement_data = matlab.load_mvmt_file(os.path.join(session_dir,behavior_filename))
 
-    events = order_events_into_trials(all_events, frame_log)
-    traces = order_events_into_trials(all_traces, frame_log)
+    events_divided_to_trials = order_events_into_trials(all_events, frame_log)
+    [bins, events] = create_training_data(movement_data, events_divided_to_trials, [1,2,3,4,5])
+    bins = wide_binning(bins, 24, 2)
+
+    print session_dir
+    print bins.shape, events.shape
+    print
+    place_cells, _, _ = find_place_cells(bins, events)
+    events = order_events_into_trials(all_events[place_cells, :], frame_log)
+    traces = order_events_into_trials(all_traces[place_cells, :], frame_log)
 
     return events, traces, movement_data
 
@@ -48,14 +58,14 @@ def calculate_conditional_activity_probability(events_segments):
     run_activity = np.vstack(run_activity).T
     edge_activity = np.vstack(edge_activity).T
 
-    f, axx = subplots(1, 3, sharey=True, sharex=True)
-    axx[0].imshow(run_activity, interpolation='none', aspect='auto')
-    axx[0].set_title('run activity')
-    axx[1].imshow(edge_activity, interpolation='none', aspect='auto')
-    axx[1].set_title('edge activity')
-    axx[2].imshow(edge_activity*run_activity, interpolation='none', aspect='auto')
-    axx[2].set_title('multiplication')
-    f.show()
+    # f, axx = subplots(1, 3, sharey=True, sharex=True)
+    # axx[0].imshow(run_activity, interpolation='none', aspect='auto')
+    # axx[0].set_title('run activity')
+    # axx[1].imshow(edge_activity, interpolation='none', aspect='auto')
+    # axx[1].set_title('edge activity')
+    # axx[2].imshow(edge_activity*run_activity, interpolation='none', aspect='auto')
+    # axx[2].set_title('multiplication')
+    # f.show()
 
     p_run = np.sum(run_activity, axis=1)/np.float32(run_activity.shape[1])
 
@@ -63,16 +73,17 @@ def calculate_conditional_activity_probability(events_segments):
     edge_run_activity = run_activity*edge_activity
     number_of_active_runs = np.sum(run_activity, axis=1)
     p_edge_run = np.sum(edge_run_activity, axis=1)/np.float32(number_of_active_runs)
+    p_edge = np.sum(edge_activity, axis=1)/np.float32(edge_activity.shape[1])
 
-    f1, axx = subplots(2, 1, sharey=True, sharex=True)
-    hist_bins = np.arange(0, 1.01, 0.01)
-    axx[0].hist(p_run[~np.isnan(p_run)], bins = hist_bins)
-    axx[0].set_title('p(active in run)')
-    axx[1].hist(p_edge_run[~np.isnan(p_edge_run)], bins = hist_bins)
-    axx[1].set_title('p(active in edge| active in run)')
-    f1.show()
+    # f1, axx = subplots(2, 1, sharey=True, sharex=True)
+    # hist_bins = np.arange(0, 1.01, 0.01)
+    # axx[0].hist(p_run[~np.isnan(p_run)], bins = hist_bins)
+    # axx[0].set_title('p(active in run)')
+    # axx[1].hist(p_edge_run[~np.isnan(p_edge_run)], bins = hist_bins)
+    # axx[1].set_title('p(active in edge| active in run)')
+    # f1.show()
 
-    return p_edge_run, p_run
+    return p_edge_run, p_edge
 
 def create_segments_for_run_epochs_and_edges_entire_session(activity, movement_data,
                                                             segment_type, seconds_range,
@@ -161,13 +172,78 @@ def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
     return segments_activity
 
 def main():
+    # p_edge_run_before_all = []
+    # p_edge_before_all = []
+    # p_edge_run_after_all = []
+    # p_edge_after_all = []
 
-    session_dir = r'D:\dev\replays\work_data\two_environments\c4m6\day1\envA'
-    [events, traces, movement_data] = load_session_data(session_dir)
-    activity_segments = create_segments_for_run_epochs_and_edges_entire_session(events, movement_data,
-                                                            'before', [0,2],
-                                                            EDGE_BINS)
-    [p_edge_run, p_run] = calculate_conditional_activity_probability(activity_segments)
+    p_value = {}
+    sign_p = {}
+    for i, mouse in enumerate(MOUSE):
+        mouse_name = 'c%dm%d' %(CAGE[i], mouse)
+        p_value[mouse_name] = {'p_before': [],
+                               'p_after': [],
+                               'p_before_after': []}
+        sign_p[mouse_name] = {'sign_before': [],
+                               'sign_after': [],
+                               'sign_before_after': []}
+
+        for day in DAYS:
+            session_dir = WORK_DIR + '\c%dm%d\day%s\%s' %(CAGE[i], mouse, day, ENV)
+            events, _, movement_data = load_session_data(session_dir)
+            activity_segments_before = create_segments_for_run_epochs_and_edges_entire_session(events,
+                                                                                        movement_data,
+                                                                                        'before', [0, 2],
+                                                                                        EDGE_BINS)
+            [p_edge_run_before, p_edge_before] = calculate_conditional_activity_probability(activity_segments_before)
+
+            stats, p =  scipy.stats.ttest_rel(p_edge_run_before, p_edge_before, axis=0, nan_policy='omit')
+            p_value[mouse_name]['p_before'].extend([p])
+            sign_p[mouse_name]['sign_before'].extend([np.sign(stats)])
+
+            # p_edge_run_before_all.extend(p_edge_run_before)
+            # p_edge_before_all.extend(p_edge_before)
+
+            activity_segments_after = create_segments_for_run_epochs_and_edges_entire_session(events,
+                                                                                        movement_data,
+                                                                                        'after', [2, 4],
+                                                                                        EDGE_BINS)
+            [p_edge_run_after, p_edge_after] = calculate_conditional_activity_probability(activity_segments_after)
+
+            stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_after, axis=0, nan_policy='omit')
+            p_value[mouse_name]['p_after'].extend([p])
+            sign_p[mouse_name]['sign_after'].extend([np.sign(stats)])
+
+            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_run_after, axis=0, nan_policy='omit')
+            p_value[mouse_name]['p_before_after'].extend([p])
+            sign_p[mouse_name]['sign_before_after'].extend([np.sign(stats)])
+
+            # p_edge_run_after_all.extend(p_edge_run_after)
+            # p_edge_after_all.extend(p_edge_after)
+
+        f, axx = subplots(2, 3, sharex=True)
+        axx[0, 0].bar(range(7), p_value[mouse_name]['p_before'])
+        axx[0, 0].set_title('p(active before run|active in run) - p(active before run)')
+        axx[0, 0].set_ylabel('P value')
+        axx[1, 0].bar(range(7), sign_p[mouse_name]['sign_before'])
+        axx[1, 0].set_ylabel('sign')
+        axx[1, 0].set_xlabel('#session')
+
+        axx[0, 1].bar(range(7), p_value[mouse_name]['p_after'])
+        axx[0, 1].set_title('p(active after run|active in run) - p(active after run)')
+        axx[0, 1].set_ylabel('P value')
+        axx[1, 1].bar(range(7), sign_p[mouse_name]['sign_after'])
+        axx[1, 1].set_ylabel('sign')
+        axx[1, 1].set_xlabel('#session')
+
+        axx[0, 2].bar(range(7), p_value[mouse_name]['p_before_after'])
+        axx[0, 2].set_title('p(active before run|active in run) - p(active after run|active in run)')
+        axx[0, 2].set_ylabel('P value')
+        axx[1, 2].bar(range(7), sign_p[mouse_name]['sign_before_after'])
+        axx[1, 2].set_ylabel('sign')
+        axx[1, 2].set_xlabel('#session')
+        # f.set_title('t-test for paired samples')
+        f.show()
 
     raw_input('press enter to quit')
 
