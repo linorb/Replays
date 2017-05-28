@@ -7,10 +7,10 @@ from bambi.tools import matlab
 from bambi.tools.activity_loading import order_events_into_trials, create_training_data, wide_binning
 from zivlab.analysis.place_cells import find_place_cells
 
-EDGE_BINS = [0, 1, 2, 21, 22, 23]
+EDGE_BINS = [0, 1, 10, 11]
 FRAME_RATE = 20 #Hz
-MOUSE = [6, 4, 1, 1]
-CAGE = [4, 7, 11, 13]
+MOUSE = [4, 4, 1, 1]
+CAGE = [6, 7, 11, 13]
 ENV = 'envA'
 DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
@@ -31,9 +31,6 @@ def load_session_data(session_dir):
     [bins, events] = create_training_data(movement_data, events_divided_to_trials, [1,2,3,4,5])
     bins = wide_binning(bins, 24, 2)
 
-    print session_dir
-    print bins.shape, events.shape
-    print
     place_cells, _, _ = find_place_cells(bins, events)
     events = order_events_into_trials(all_events[place_cells, :], frame_log)
     traces = order_events_into_trials(all_traces[place_cells, :], frame_log)
@@ -76,12 +73,13 @@ def calculate_conditional_activity_probability(events_segments):
     p_edge = np.sum(edge_activity, axis=1)/np.float32(edge_activity.shape[1])
 
     # f1, axx = subplots(2, 1, sharey=True, sharex=True)
-    # hist_bins = np.arange(0, 1.01, 0.01)
-    # axx[0].hist(p_run[~np.isnan(p_run)], bins = hist_bins)
-    # axx[0].set_title('p(active in run)')
+    # hist_bins = np.arange(0, 1.05, 0.05)
+    # axx[0].hist(p_edge[~np.isnan(p_edge)], bins = hist_bins)
+    # axx[0].set_title('p(active in edge)')
     # axx[1].hist(p_edge_run[~np.isnan(p_edge_run)], bins = hist_bins)
     # axx[1].set_title('p(active in edge| active in run)')
     # f1.show()
+    # raw_input('press enter')
 
     return p_edge_run, p_edge
 
@@ -105,6 +103,7 @@ def create_segments_for_run_epochs_and_edges_entire_session(activity, movement_d
     for i in range(1,number_of_trials-1):
         trial_events = activity[i]
         bins = movement_data[i]['bin']
+        bins = wide_binning(bins, 24, 2)
         trial_segments = create_segments_for_run_epochs_and_edges_for_trial(trial_events, bins,
                                                             segment_type, seconds_range,
                                                             edge_bins)
@@ -156,10 +155,13 @@ def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
             if segment_type == 'before':
                 if frames_indices[0]>0:
                     edge_segment = edge_segment[:, -frames_indices[1]:-frames_indices[0]]
+                    bins_edge_segment = bins[edge_locations[i]][-frames_indices[1]:-frames_indices[0]]
                 else:
                     edge_segment = edge_segment[:, -frames_indices[1]:]
+                    bins_edge_segment = bins[edge_locations[i]][-frames_indices[1]:]
             elif segment_type == 'after':
                 edge_segment = edge_segment[:, frames_indices[0]:-frames_indices[1]]
+                bins_edge_segment = bins[edge_locations[i]][frames_indices[0]:-frames_indices[1]]
             segment.append(edge_segment)
         except IndexError:
             continue
@@ -167,9 +169,33 @@ def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
         run_segment = events[:, run_locations[i]]
         segment.append(run_segment)
 
+        #plotting for debugging
+        # f, axx = subplots(2, 2, sharex='col')
+        # f.tight_layout()
+        # f.subplots_adjust(top=0.9)
+        # axx[0, 0].plot(bins_edge_segment)
+        # axx[0, 1].plot(bins[run_locations[i]])
+        # axx[1, 0].imshow(edge_segment, interpolation='none', aspect='auto')
+        # axx[1, 1].matshow(run_segment, interpolation='none', aspect='auto')
+        # f.show()
+        # raw_input('press enter to continue')
+        # close(f)
+
         segments_activity.append(segment)
 
     return segments_activity
+def t_test_for_deppendent_smaples(a, b):
+    # Calculate t test for difference. omit "nan"s
+    nan_inds = np.isnan(b) | np.isnan(a)
+    A = a[~nan_inds]
+    B = b[~nan_inds]
+    difference = A-B
+    mean_diff = np.mean(difference)
+    std_diff = np.std(difference)
+    tt = np.float32(mean_diff)/(std_diff/np.sqrt(len(A)))
+    pval = scipy.stats.t.cdf(tt, len(A) - 1)
+
+    return tt, 1-pval
 
 def main():
     # p_edge_run_before_all = []
@@ -197,7 +223,8 @@ def main():
                                                                                         EDGE_BINS)
             [p_edge_run_before, p_edge_before] = calculate_conditional_activity_probability(activity_segments_before)
 
-            stats, p =  scipy.stats.ttest_rel(p_edge_run_before, p_edge_before, axis=0, nan_policy='omit')
+            # stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_before, axis=0, nan_policy='omit')
+            stats, p = t_test_for_deppendent_smaples(p_edge_run_before, p_edge_before)
             p_value[mouse_name]['p_before'].extend([p])
             sign_p[mouse_name]['sign_before'].extend([np.sign(stats)])
 
@@ -210,11 +237,13 @@ def main():
                                                                                         EDGE_BINS)
             [p_edge_run_after, p_edge_after] = calculate_conditional_activity_probability(activity_segments_after)
 
-            stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_after, axis=0, nan_policy='omit')
+            # stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_after, axis=0, nan_policy='omit')
+            stats, p = t_test_for_deppendent_smaples(p_edge_run_after, p_edge_after)
             p_value[mouse_name]['p_after'].extend([p])
             sign_p[mouse_name]['sign_after'].extend([np.sign(stats)])
 
-            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_run_after, axis=0, nan_policy='omit')
+            # stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_run_after, axis=0, nan_policy='omit')
+            stats, p = t_test_for_deppendent_smaples(p_edge_run_before, p_edge_run_after)
             p_value[mouse_name]['p_before_after'].extend([p])
             sign_p[mouse_name]['sign_before_after'].extend([np.sign(stats)])
 
