@@ -223,8 +223,8 @@ def main():
                                                                                         EDGE_BINS)
             [p_edge_run_before, p_edge_before] = calculate_conditional_activity_probability(activity_segments_before)
 
-            # stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_before, axis=0, nan_policy='omit')
-            stats, p = t_test_for_deppendent_smaples(p_edge_run_before, p_edge_before)
+            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_before, axis=0, nan_policy='omit')
+            # stats, p = t_test_for_deppendent_smaples(p_edge_run_before, p_edge_before)
             p_value[mouse_name]['p_before'].extend([p])
             sign_p[mouse_name]['sign_before'].extend([np.sign(stats)])
 
@@ -237,13 +237,13 @@ def main():
                                                                                         EDGE_BINS)
             [p_edge_run_after, p_edge_after] = calculate_conditional_activity_probability(activity_segments_after)
 
-            # stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_after, axis=0, nan_policy='omit')
-            stats, p = t_test_for_deppendent_smaples(p_edge_run_after, p_edge_after)
+            stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_after, axis=0, nan_policy='omit')
+            # stats, p = t_test_for_deppendent_smaples(p_edge_run_after, p_edge_after)
             p_value[mouse_name]['p_after'].extend([p])
             sign_p[mouse_name]['sign_after'].extend([np.sign(stats)])
 
-            # stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_run_after, axis=0, nan_policy='omit')
-            stats, p = t_test_for_deppendent_smaples(p_edge_run_before, p_edge_run_after)
+            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_run_after, axis=0, nan_policy='omit')
+            # stats, p = t_test_for_deppendent_smaples(p_edge_run_before, p_edge_run_after)
             p_value[mouse_name]['p_before_after'].extend([p])
             sign_p[mouse_name]['sign_before_after'].extend([np.sign(stats)])
 
@@ -252,25 +252,27 @@ def main():
 
         f, axx = subplots(2, 3, sharex=True)
         axx[0, 0].bar(range(7), p_value[mouse_name]['p_before'])
-        axx[0, 0].set_title('p(active before run|active in run) - p(active before run)')
-        axx[0, 0].set_ylabel('P value')
+        axx[0, 0].set_title('p(active before run|active in run) - p(active before run)', size=20)
+        axx[0, 0].set_ylabel('P value', fontsize=20)
         axx[1, 0].bar(range(7), sign_p[mouse_name]['sign_before'])
-        axx[1, 0].set_ylabel('sign')
-        axx[1, 0].set_xlabel('#session')
+        axx[1, 0].set_ylabel('sign', fontsize=20)
+        axx[1, 0].set_xlabel('#session', fontsize=20)
 
         axx[0, 1].bar(range(7), p_value[mouse_name]['p_after'])
-        axx[0, 1].set_title('p(active after run|active in run) - p(active after run)')
-        axx[0, 1].set_ylabel('P value')
+        axx[0, 1].set_title('p(active after run|active in run) - p(active after run)', size=20)
+        axx[0, 1].set_ylabel('P value', fontsize=20)
         axx[1, 1].bar(range(7), sign_p[mouse_name]['sign_after'])
-        axx[1, 1].set_ylabel('sign')
-        axx[1, 1].set_xlabel('#session')
+        axx[1, 1].set_ylabel('sign', fontsize=20)
+        axx[1, 1].set_xlabel('#session', fontsize=20)
 
         axx[0, 2].bar(range(7), p_value[mouse_name]['p_before_after'])
-        axx[0, 2].set_title('p(active before run|active in run) - p(active after run|active in run)')
-        axx[0, 2].set_ylabel('P value')
+        axx[0, 2].set_title('p(active before run|active in run) - p(active after run|active in run)', size=20)
+        axx[0, 2].set_ylabel('P value', fontsize=20)
         axx[1, 2].bar(range(7), sign_p[mouse_name]['sign_before_after'])
-        axx[1, 2].set_ylabel('sign')
-        axx[1, 2].set_xlabel('#session')
+        axx[1, 2].set_ylabel('sign', fontsize=20)
+        axx[1, 2].set_xlabel('#session', fontsize=20)
+
+        f.suptitle('C%sM%s %s T test paired samples' %(CAGE[i], mouse, ENV), fontsize=25)
         # f.set_title('t-test for paired samples')
         f.show()
 
