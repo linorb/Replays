@@ -18,6 +18,7 @@ WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 VELOCITY_THRESHOLD = 1
 NUMBER_OF_BINS = 24
 SPACE_BINNING = 2
+NUMBER_OF_PERMUTATIONS = 2
 
 def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -85,12 +86,32 @@ def test_bucket_trial(events, p_neuron_bin, edge_bins):
 
     return statistics, decoded_bins, decoded_env
 
+def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin, edge_bins, correct_decoding_percentage,
+                                         number_of_permutations, environment):
+    decoding_fraction = np.zeros((number_of_permutations))
+    edge_fraction = np.zeros((number_of_permutations))
+    for i in range(number_of_permutations):
+        events_permutation = np.random.permutation(events)
+        statistics, _, _ =  test_bucket_trial(events_permutation, p_neuron_bin, edge_bins)
+        decoding_fraction[i] = (statistics[environment]['overall_decoding_fraction'])
+        edge_fraction[i] = (statistics[environment]['edge_decoding_fraction'])
+
+    p_val = {}
+    p_val['overall_decoding_fraction'] = \
+        sum(decoding_fraction > correct_decoding_percentage['overall_decoding_fraction'])/np.float32(number_of_permutations)
+    p_val['edge_decoding_fraction'] = \
+        sum(edge_fraction > correct_decoding_percentage['edge_decoding_fraction'])/np.float32(number_of_permutations)
+
+    return p_val
+
 def main():
     for i, mouse in enumerate(MOUSE):
         cell_reg_filename = WORK_DIR + '\c%dm%d\cellRegisteredFixed.mat' %(CAGE[i], mouse)
         cell_registration = matlab.load_cell_registration(cell_reg_filename)
         correct_decoding_percentage = []
         edge_decoding_percentage = []
+        p_val_correct = []
+        p_val_edge = []
         for session_ind, day in enumerate(DAYS):
             place_cells = []
             p_neuron_bin = {}
@@ -135,36 +156,68 @@ def main():
                 statistics, _, _ = test_bucket_trial(trial_events_A, p_neuron_bin, EDGE_BINS)
                 correct_decoding_percentage.append(statistics['envA']['overall_decoding_fraction'])
                 edge_decoding_percentage.append(statistics['envA']['edge_decoding_fraction'])
+                p_val = calculate_p_val_for_correct_decoding_trial(trial_events_A, p_neuron_bin, EDGE_BINS,
+                                                                   statistics['envA'],
+                                                                    NUMBER_OF_PERMUTATIONS, 'envA')
+                p_val_correct.append(p_val['overall_decoding_fraction'])
+                p_val_edge.append(p_val['edge_decoding_fraction'])
 
                 trial_events_B = events_tracesB[bucket_trials_indicesB[trial]][place_cells, :]
                 statistics, _, _ = test_bucket_trial(trial_events_B, p_neuron_bin, EDGE_BINS)
                 correct_decoding_percentage.append(statistics['envB']['overall_decoding_fraction'])
                 edge_decoding_percentage.append(statistics['envB']['edge_decoding_fraction'])
+                p_val = calculate_p_val_for_correct_decoding_trial(trial_events_A, p_neuron_bin, EDGE_BINS,
+                                                                   statistics['envB'],
+                                                                   NUMBER_OF_PERMUTATIONS, 'envB')
+                p_val_correct.append(p_val['overall_decoding_fraction'])
+                p_val_edge.append(p_val['edge_decoding_fraction'])
 
         # plot all bucket trials env A and B
-        f, axx = subplots(2, 1, sharex=True)
+        f, axx = subplots(2, 2, sharex=True)
         # A bucket before
-        axx[0].bar(range(0, 28, 4), correct_decoding_percentage[0:28:4], color = 'blue')
-        axx[0].bar(range(1, 28, 4), correct_decoding_percentage[2:28:4], color = 'yellow')
-        axx[0].bar(range(2, 28, 4), correct_decoding_percentage[1:28:4], color = 'blue')
-        axx[0].bar(range(3, 28, 4), correct_decoding_percentage[3:28:4], color = 'yellow')
-        axx[0].plot(range(28), [0.5]*28, color = 'red')
-        axx[0].set_title('correct decoding fraction c%sm%s' %(CAGE[i], mouse))
-        axx[0].set_ylabel('fraction')
-        axx[0].set_ylim((0,1.1))
-        axx[0].set_xticks(np.arange(0.5, 27.5, 1))
-        axx[0].set_xticklabels(['A', 'A', 'B', 'B'] * 7)
+        axx[0, 0].bar(range(0, 28, 4), correct_decoding_percentage[0:28:4], color = 'blue')
+        axx[0, 0].bar(range(1, 28, 4), correct_decoding_percentage[2:28:4], color = 'yellow')
+        axx[0, 0].bar(range(2, 28, 4), correct_decoding_percentage[1:28:4], color = 'blue')
+        axx[0, 0].bar(range(3, 28, 4), correct_decoding_percentage[3:28:4], color = 'yellow')
+        axx[0, 0].plot(range(28), [0.5]*28, color = 'red')
+        axx[0, 0].set_title('correct decoding fraction c%sm%s' %(CAGE[i], mouse))
+        axx[0, 0].set_ylabel('fraction')
+        axx[0, 0].set_ylim((0,1.1))
+        axx[0, 0].set_xticks(np.arange(0.5, 27.5, 1))
+        axx[0, 0].set_xticklabels(['A', 'A', 'B', 'B'] * 7)
 
-        axx[1].bar(range(0, 28, 4), edge_decoding_percentage[0:28:4], color='blue')
-        axx[1].bar(range(1, 28, 4), edge_decoding_percentage[2:28:4], color='yellow')
-        axx[1].bar(range(2, 28, 4), edge_decoding_percentage[1:28:4], color='blue')
-        axx[1].bar(range(3, 28, 4), edge_decoding_percentage[3:28:4], color='yellow')
-        axx[1].plot(range(28), [0.5]*28, color = 'red')
-        axx[1].set_title('edge decoding fraction c%sm%s' % (CAGE[i], mouse))
-        axx[1].set_ylabel('fraction')
-        axx[1].set_ylim((0, 1.1))
-        axx[1].set_xticks(np.arange(0.5, 27.5, 1))
-        axx[1].set_xticklabels(['A', 'A', 'B', 'B'] * 7)
+        axx[1, 0].bar(range(0, 28, 4), p_val_correct[0:28:4], color='blue')
+        axx[1, 0].bar(range(1, 28, 4), p_val_correct[2:28:4], color='yellow')
+        axx[1, 0].bar(range(2, 28, 4), p_val_correct[1:28:4], color='blue')
+        axx[1, 0].bar(range(3, 28, 4), p_val_correct[3:28:4], color='yellow')
+        axx[1, 0].plot(range(28), [0.05] * 28, color='red')
+        axx[1, 0].set_title('P value decoding fraction c%sm%s' % (CAGE[i], mouse))
+        axx[1, 0].set_ylabel('fraction')
+        axx[1, 0].set_ylim((0, 1.1))
+        axx[1, 0].set_xticks(np.arange(0.5, 27.5, 1))
+        axx[1, 0].set_xticklabels(['A', 'A', 'B', 'B'] * 7)
+
+        axx[0, 1].bar(range(0, 28, 4), edge_decoding_percentage[0:28:4], color='blue')
+        axx[0, 1].bar(range(1, 28, 4), edge_decoding_percentage[2:28:4], color='yellow')
+        axx[0, 1].bar(range(2, 28, 4), edge_decoding_percentage[1:28:4], color='blue')
+        axx[0, 1].bar(range(3, 28, 4), edge_decoding_percentage[3:28:4], color='yellow')
+        axx[0, 1].plot(range(28), [0.5]*28, color = 'red')
+        axx[0, 1].set_title('edge decoding fraction c%sm%s' % (CAGE[i], mouse))
+        axx[0, 1].set_ylabel('fraction')
+        axx[0, 1].set_ylim((0, 1.1))
+        axx[0, 1].set_xticks(np.arange(0.5, 27.5, 1))
+        axx[0, 1].set_xticklabels(['A', 'A', 'B', 'B'] * 7)
+
+        axx[1, 1].bar(range(0, 28, 4), p_val_edge[0:28:4], color='blue')
+        axx[1, 1].bar(range(1, 28, 4), p_val_edge[2:28:4], color='yellow')
+        axx[1, 1].bar(range(2, 28, 4), p_val_edge[1:28:4], color='blue')
+        axx[1, 1].bar(range(3, 28, 4), p_val_edge[3:28:4], color='yellow')
+        axx[1, 1].plot(range(28), [0.05] * 28, color='red')
+        axx[1, 1].set_title('P value fraction c%sm%s' % (CAGE[i], mouse))
+        axx[1, 1].set_ylabel('fraction')
+        axx[1, 1].set_ylim((0, 1.1))
+        axx[1, 1].set_xticks(np.arange(0.5, 27.5, 1))
+        axx[1, 1].set_xticklabels(['A', 'A', 'B', 'B'] * 7)
 
         f.show()
 
