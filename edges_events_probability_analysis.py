@@ -11,7 +11,7 @@ EDGE_BINS = [0, 1, 10, 11]
 FRAME_RATE = 20 #Hz
 MOUSE = [4, 4, 1, 1]
 CAGE = [6, 7, 11, 13]
-ENV = 'envA'
+ENV = 'envB'
 DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 
@@ -28,7 +28,8 @@ def load_session_data(session_dir):
     movement_data = matlab.load_mvmt_file(os.path.join(session_dir,behavior_filename))
 
     events_divided_to_trials = order_events_into_trials(all_events, frame_log)
-    [bins, events] = create_training_data(movement_data, events_divided_to_trials, [1,2,3,4,5])
+    linear_trials_indices = range(len(events_divided_to_trials))[1:-1]
+    [bins, events] = create_training_data(movement_data, events_divided_to_trials, linear_trials_indices)
     bins = wide_binning(bins, 24, 2)
 
     place_cells, _, _ = find_place_cells(bins, events)
@@ -215,6 +216,8 @@ def main():
                                'sign_before_after': []}
 
         for day in DAYS:
+            print CAGE[i], mouse, day
+            print
             session_dir = WORK_DIR + '\c%dm%d\day%s\%s' %(CAGE[i], mouse, day, ENV)
             events, _, movement_data = load_session_data(session_dir)
             activity_segments_before = create_segments_for_run_epochs_and_edges_entire_session(events,
