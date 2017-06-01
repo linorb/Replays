@@ -60,7 +60,7 @@ def test_bucket_trial(events, p_neuron_bin, edge_bins):
         if np.sum(events[:, frame]) > 0:
             decoded_bins[frame], environment_name = decode_most_likely_bin_and_environment(
                                                     np.expand_dims(events[:, frame], axis=1), p_neuron_bin)
-            if environment_name=='envA':
+            if 'envA' in environment_name:
                 decoded_env[frame] = 0
             else:
                 decoded_env[frame] = 1
@@ -123,8 +123,8 @@ def main():
             [binsA, eventsA] = create_training_data(movement_dataA, events_tracesA, linear_trials_indicesA)
             # use only events of place cells:
             binsA = wide_binning(binsA, NUMBER_OF_BINS, SPACE_BINNING)
-            velocity = concatenate_movment_data(movement_dataA, 'velocity', linear_trials_indicesA)
-            velocity_mask = np.abs(velocity) > VELOCITY_THRESHOLD
+            velocityA = concatenate_movment_data(movement_dataA, 'velocity', linear_trials_indicesA)
+            velocity_mask = np.abs(velocityA) > VELOCITY_THRESHOLD
             bins_temp = binsA[velocity_mask]
             events_temp = eventsA[:, velocity_mask]
             place_cellsA, _, _ = find_place_cells(bins_temp, events_temp)
@@ -137,8 +137,8 @@ def main():
             bucket_trials_indicesB = [0, len(events_tracesB)-1]
             [binsB, eventsB] = create_training_data(movement_dataB, events_tracesB, linear_trials_indicesB)
             binsB = wide_binning(binsB, NUMBER_OF_BINS, SPACE_BINNING)
-            velocity = concatenate_movment_data(movement_dataB, 'velocity', linear_trials_indicesB)
-            velocity_mask = np.abs(velocity) > VELOCITY_THRESHOLD
+            velocityB = concatenate_movment_data(movement_dataB, 'velocity', linear_trials_indicesB)
+            velocity_mask = np.abs(velocityB) > VELOCITY_THRESHOLD
             bins_temp = binsB[velocity_mask]
             events_temp = eventsB[:, velocity_mask]
             place_cellsB, _, _ = find_place_cells(bins_temp, events_temp)
@@ -146,10 +146,21 @@ def main():
 
             place_cells = np.concatenate(place_cells)
             place_cells = np.unique(place_cells)
-            p_neuron_binA = maximum_likelihood.calculate_p_r_s_matrix(binsA, eventsA[place_cells, :])
-            p_neuron_bin['envA'] = p_neuron_binA
-            p_neuron_binB = maximum_likelihood.calculate_p_r_s_matrix(binsB, eventsB[place_cells, :])
-            p_neuron_bin['envB'] = p_neuron_binB
+
+            # dividing into two directions - positive, negative
+            p_neuron_binA_positive = maximum_likelihood.calculate_p_r_s_matrix(binsA[velocityA > 0],
+                                                                               eventsA[place_cells, :][:, velocityA >0])
+            p_neuron_bin['envA_positive'] = p_neuron_binA_positive
+            p_neuron_binA_negative = maximum_likelihood.calculate_p_r_s_matrix(binsA[velocityA < 0],
+                                                                               eventsA[place_cells, :][:, velocityA < 0])
+            p_neuron_bin['envA_negative'] = p_neuron_binA_negative
+
+            p_neuron_binB_positive = maximum_likelihood.calculate_p_r_s_matrix(binsB[velocityB > 0],
+                                                                               eventsB[place_cells, :][:, velocityB > 0])
+            p_neuron_bin['envB_positive'] = p_neuron_binA_positive
+            p_neuron_binB_negative = maximum_likelihood.calculate_p_r_s_matrix(binsB[velocityB < 0],
+                                                                               eventsB[place_cells, :][:, velocityB < 0])
+            p_neuron_bin['envB_negative'] = p_neuron_binB_negative
 
             for trial in range(2):
                 trial_events_A = events_tracesA[bucket_trials_indicesA[trial]][place_cells, :]
