@@ -15,6 +15,9 @@ CAGE = [6, 7, 11, 13]
 ENV = ['envA', 'envB']
 DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
+VELOCITY_THRESHOLD = 1
+NUMBER_OF_BINS = 24
+SPACE_BINNING = 2
 
 def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -89,57 +92,85 @@ def main():
         correct_decoding_percentage = []
         edge_decoding_percentage = []
         for session_ind, day in enumerate(DAYS):
+            place_cells = []
             p_neuron_bin = {}
-            # Create p_neuron_bin for envA
+            # Create training data for environment A
             session_dir = WORK_DIR + '\c%dm%d\day%s\%s' %(CAGE[i], mouse, day, ENV[0])
             events_tracesA, movement_dataA = load_session_data(session_dir, cell_registration, 2*session_ind)
             linear_trials_indicesA = range(len(events_tracesA))[1:-1]
             bucket_trials_indicesA = [0, len(events_tracesA) - 1]
-            [bins, events] = create_training_data(movement_dataA, events_tracesA, linear_trials_indicesA)
-            bins = wide_binning(bins, 24, 2)
-            p_neuron_binA = maximum_likelihood.calculate_p_r_s_matrix(bins, events)
-            p_neuron_bin['envA'] = p_neuron_binA
+            [binsA, eventsA] = create_training_data(movement_dataA, events_tracesA, linear_trials_indicesA)
+            # use only events of place cells:
+            binsA = wide_binning(binsA, NUMBER_OF_BINS, SPACE_BINNING)
+            velocity = concatenate_movment_data(movement_dataA, 'velocity', linear_trials_indicesA)
+            velocity_mask = np.abs(velocity) > VELOCITY_THRESHOLD
+            bins_temp = binsA[velocity_mask]
+            events_temp = eventsA[:, velocity_mask]
+            place_cellsA, _, _ = find_place_cells(bins_temp, events_temp)
+            place_cells.append(place_cellsA)
 
-            # Create p_neuron_bin for envB
+            # Create training data for environment B
             session_dir = WORK_DIR + '\c%dm%d\day%s\%s' % (CAGE[i], mouse, day, ENV[1])
             events_tracesB, movement_dataB = load_session_data(session_dir, cell_registration, 2*session_ind+1)
             linear_trials_indicesB = range(len(events_tracesB))[1:-1]
             bucket_trials_indicesB = [0, len(events_tracesB)-1]
-            [bins, events] = create_training_data(movement_dataB, events_tracesB, linear_trials_indicesB)
-            bins = wide_binning(bins, 24, 2)
-            p_neuron_binB = maximum_likelihood.calculate_p_r_s_matrix(bins, events)
+            [binsB, eventsB] = create_training_data(movement_dataB, events_tracesB, linear_trials_indicesB)
+            binsB = wide_binning(binsB, NUMBER_OF_BINS, SPACE_BINNING)
+            velocity = concatenate_movment_data(movement_dataB, 'velocity', linear_trials_indicesB)
+            velocity_mask = np.abs(velocity) > VELOCITY_THRESHOLD
+            bins_temp = binsB[velocity_mask]
+            events_temp = eventsB[:, velocity_mask]
+            place_cellsB, _, _ = find_place_cells(bins_temp, events_temp)
+            place_cells.append(place_cellsB)
+
+            place_cells = np.concatenate(place_cells)
+            place_cells = np.unique(place_cells)
+            p_neuron_binA = maximum_likelihood.calculate_p_r_s_matrix(binsA, eventsA[place_cells, :])
+            p_neuron_bin['envA'] = p_neuron_binA
+            p_neuron_binB = maximum_likelihood.calculate_p_r_s_matrix(binsB, eventsB[place_cells, :])
             p_neuron_bin['envB'] = p_neuron_binB
 
             for trial in range(2):
-                trial_events_A = events_tracesA[bucket_trials_indicesA[trial]]
+                trial_events_A = events_tracesA[bucket_trials_indicesA[trial]][place_cells, :]
                 statistics, _, _ = test_bucket_trial(trial_events_A, p_neuron_bin, EDGE_BINS)
                 correct_decoding_percentage.append(statistics['envA']['overall_decoding_fraction'])
                 edge_decoding_percentage.append(statistics['envA']['edge_decoding_fraction'])
 
-                trial_events_B = events_tracesB[bucket_trials_indicesB[trial]]
+                trial_events_B = events_tracesB[bucket_trials_indicesB[trial]][place_cells, :]
                 statistics, _, _ = test_bucket_trial(trial_events_B, p_neuron_bin, EDGE_BINS)
                 correct_decoding_percentage.append(statistics['envB']['overall_decoding_fraction'])
                 edge_decoding_percentage.append(statistics['envB']['edge_decoding_fraction'])
 
+        # plot all bucket trials env A and B
         f, axx = subplots(2, 1, sharex=True)
-        env_label = ['A', 'B']*14
-        axx[0].bar(range(4*7), correct_decoding_percentage, tick_label=env_label)
+        # A bucket before
+        axx[0].bar(range(0, 28, 4), correct_decoding_percentage[0:28:4], color = 'blue')
+        axx[0].bar(range(1, 28, 4), correct_decoding_percentage[2:28:4], color = 'yellow')
+        axx[0].bar(range(2, 28, 4), correct_decoding_percentage[1:28:4], color = 'blue')
+        axx[0].bar(range(3, 28, 4), correct_decoding_percentage[3:28:4], color = 'yellow')
+        axx[0].plot(range(28), [0.5]*28, color = 'red')
         axx[0].set_title('correct decoding fraction c%sm%s' %(CAGE[i], mouse))
         axx[0].set_ylabel('fraction')
         axx[0].set_ylim((0,1.1))
+        axx[0].set_xticks(np.arange(0.5, 27.5, 1))
+        axx[0].set_xticklabels(['A', 'A', 'B', 'B'] * 7)
 
-        axx[1].bar(range(4*7), edge_decoding_percentage, tick_label=env_label)
+        axx[1].bar(range(0, 28, 4), edge_decoding_percentage[0:28:4], color='blue')
+        axx[1].bar(range(1, 28, 4), edge_decoding_percentage[2:28:4], color='yellow')
+        axx[1].bar(range(2, 28, 4), edge_decoding_percentage[1:28:4], color='blue')
+        axx[1].bar(range(3, 28, 4), edge_decoding_percentage[3:28:4], color='yellow')
+        axx[1].plot(range(28), [0.5]*28, color = 'red')
         axx[1].set_title('edge decoding fraction c%sm%s' % (CAGE[i], mouse))
         axx[1].set_ylabel('fraction')
+        axx[1].set_ylim((0, 1.1))
+        axx[1].set_xticks(np.arange(0.5, 27.5, 1))
+        axx[1].set_xticklabels(['A', 'A', 'B', 'B'] * 7)
+
         f.show()
 
+        #
     raw_input('press enter')
 
+
+
 main()
-
-
-
-
-
-
-
