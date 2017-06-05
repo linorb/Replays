@@ -4,16 +4,17 @@ from matplotlib.pyplot import *
 import scipy.stats
 
 from bambi.tools import matlab
-from bambi.tools.activity_loading import order_events_into_trials, create_training_data, wide_binning
+from bambi.tools.activity_loading import *
 from zivlab.analysis.place_cells import find_place_cells
 
 EDGE_BINS = [0, 1, 10, 11]
 FRAME_RATE = 20 #Hz
 MOUSE = [4, 4, 1, 1]
 CAGE = [6, 7, 11, 13]
-ENV = 'envB'
+ENV = 'envA'
 DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
+VELOCITY_THRESHOLD = 1
 
 def load_session_data(session_dir):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -31,8 +32,12 @@ def load_session_data(session_dir):
     linear_trials_indices = range(len(events_divided_to_trials))[1:-1]
     [bins, events] = create_training_data(movement_data, events_divided_to_trials, linear_trials_indices)
     bins = wide_binning(bins, 24, 2)
-
-    place_cells, _, _ = find_place_cells(bins, events)
+    velocity = concatenate_movment_data(movement_data, 'velocity', linear_trials_indices)
+    forward_velocity = velocity > VELOCITY_THRESHOLD
+    backward_velocity = velocity < -VELOCITY_THRESHOLD
+    place_cells_forward, _, _ = find_place_cells(bins[forward_velocity], events[:, forward_velocity])
+    place_cells_backward, _, _ = find_place_cells(bins[backward_velocity], events[:, backward_velocity])
+    place_cells = np.unique(np.concatenate([place_cells_forward, place_cells_backward]))
     events = order_events_into_trials(all_events[place_cells, :], frame_log)
     traces = order_events_into_trials(all_traces[place_cells, :], frame_log)
 
@@ -206,6 +211,8 @@ def main():
 
     p_value = {}
     sign_p = {}
+    summary_figure, sum_ax = subplots(2, 3, sharex=True, sharey=True)
+
     for i, mouse in enumerate(MOUSE):
         mouse_name = 'c%dm%d' %(CAGE[i], mouse)
         p_value[mouse_name] = {'p_before': [],
@@ -257,6 +264,7 @@ def main():
         axx[0, 0].bar(range(7), p_value[mouse_name]['p_before'])
         axx[0, 0].set_title('p(active before run|active in run) - p(active before run)', size=20)
         axx[0, 0].set_ylabel('P value', fontsize=20)
+        axx[0, 0].plot(range(7), [0.05]*7, color='red')
         axx[1, 0].bar(range(7), sign_p[mouse_name]['sign_before'])
         axx[1, 0].set_ylabel('sign', fontsize=20)
         axx[1, 0].set_xlabel('#session', fontsize=20)
@@ -264,6 +272,7 @@ def main():
         axx[0, 1].bar(range(7), p_value[mouse_name]['p_after'])
         axx[0, 1].set_title('p(active after run|active in run) - p(active after run)', size=20)
         axx[0, 1].set_ylabel('P value', fontsize=20)
+        axx[0, 1].plot(range(7), [0.05] * 7, color='red')
         axx[1, 1].bar(range(7), sign_p[mouse_name]['sign_after'])
         axx[1, 1].set_ylabel('sign', fontsize=20)
         axx[1, 1].set_xlabel('#session', fontsize=20)
@@ -271,6 +280,7 @@ def main():
         axx[0, 2].bar(range(7), p_value[mouse_name]['p_before_after'])
         axx[0, 2].set_title('p(active before run|active in run) - p(active after run|active in run)', size=20)
         axx[0, 2].set_ylabel('P value', fontsize=20)
+        axx[0, 2].plot(range(7), [0.05] * 7, color='red')
         axx[1, 2].bar(range(7), sign_p[mouse_name]['sign_before_after'])
         axx[1, 2].set_ylabel('sign', fontsize=20)
         axx[1, 2].set_xlabel('#session', fontsize=20)
