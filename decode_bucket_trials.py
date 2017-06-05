@@ -18,7 +18,7 @@ WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 VELOCITY_THRESHOLD = 1
 NUMBER_OF_BINS = 24
 SPACE_BINNING = 2
-NUMBER_OF_PERMUTATIONS = 2
+NUMBER_OF_PERMUTATIONS = 500
 
 def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -113,6 +113,7 @@ def main():
         p_val_correct = []
         p_val_edge = []
         for session_ind, day in enumerate(DAYS):
+            print CAGE[i], mouse, day
             place_cells = []
             p_neuron_bin = {}
             # Create training data for environment A
@@ -124,10 +125,11 @@ def main():
             # use only events of place cells:
             binsA = wide_binning(binsA, NUMBER_OF_BINS, SPACE_BINNING)
             velocityA = concatenate_movment_data(movement_dataA, 'velocity', linear_trials_indicesA)
-            velocity_mask = np.abs(velocityA) > VELOCITY_THRESHOLD
-            bins_temp = binsA[velocity_mask]
-            events_temp = eventsA[:, velocity_mask]
-            place_cellsA, _, _ = find_place_cells(bins_temp, events_temp)
+            velocity_positive = velocityA > VELOCITY_THRESHOLD
+            velocity_negative = velocityA < -VELOCITY_THRESHOLD
+            place_cells_positive, _, _ = find_place_cells(binsA[velocity_positive], eventsA[:, velocity_positive])
+            place_cells_negative, _, _ = find_place_cells(binsA[velocity_negative], eventsA[:, velocity_negative])
+            place_cellsA = np.concatenate([place_cells_positive, place_cells_negative])
             place_cells.append(place_cellsA)
 
             # Create training data for environment B
@@ -138,27 +140,28 @@ def main():
             [binsB, eventsB] = create_training_data(movement_dataB, events_tracesB, linear_trials_indicesB)
             binsB = wide_binning(binsB, NUMBER_OF_BINS, SPACE_BINNING)
             velocityB = concatenate_movment_data(movement_dataB, 'velocity', linear_trials_indicesB)
-            velocity_mask = np.abs(velocityB) > VELOCITY_THRESHOLD
-            bins_temp = binsB[velocity_mask]
-            events_temp = eventsB[:, velocity_mask]
-            place_cellsB, _, _ = find_place_cells(bins_temp, events_temp)
+            velocity_positive = velocityB > VELOCITY_THRESHOLD
+            velocity_negative = velocityB < -VELOCITY_THRESHOLD
+            place_cells_positive, _, _ = find_place_cells(binsB[velocity_positive], eventsB[:, velocity_positive])
+            place_cells_negative, _, _ = find_place_cells(binsB[velocity_negative], eventsB[:, velocity_negative])
+            place_cellsB = np.concatenate([place_cells_positive, place_cells_negative])
             place_cells.append(place_cellsB)
 
             place_cells = np.concatenate(place_cells)
             place_cells = np.unique(place_cells)
 
             # dividing into two directions - positive, negative
-            p_neuron_binA_positive = maximum_likelihood.calculate_p_r_s_matrix(binsA[velocityA > 0],
+            p_neuron_binA_positive = maximum_likelihood.calculate_p_r_s_matrix(binsA[velocityA > VELOCITY_THRESHOLD],
                                                                                eventsA[place_cells, :][:, velocityA >0])
             p_neuron_bin['envA_positive'] = p_neuron_binA_positive
-            p_neuron_binA_negative = maximum_likelihood.calculate_p_r_s_matrix(binsA[velocityA < 0],
+            p_neuron_binA_negative = maximum_likelihood.calculate_p_r_s_matrix(binsA[velocityA < -VELOCITY_THRESHOLD],
                                                                                eventsA[place_cells, :][:, velocityA < 0])
             p_neuron_bin['envA_negative'] = p_neuron_binA_negative
 
-            p_neuron_binB_positive = maximum_likelihood.calculate_p_r_s_matrix(binsB[velocityB > 0],
+            p_neuron_binB_positive = maximum_likelihood.calculate_p_r_s_matrix(binsB[velocityB > VELOCITY_THRESHOLD],
                                                                                eventsB[place_cells, :][:, velocityB > 0])
             p_neuron_bin['envB_positive'] = p_neuron_binA_positive
-            p_neuron_binB_negative = maximum_likelihood.calculate_p_r_s_matrix(binsB[velocityB < 0],
+            p_neuron_binB_negative = maximum_likelihood.calculate_p_r_s_matrix(binsB[velocityB < -VELOCITY_THRESHOLD],
                                                                                eventsB[place_cells, :][:, velocityB < 0])
             p_neuron_bin['envB_negative'] = p_neuron_binB_negative
 
@@ -232,6 +235,31 @@ def main():
 
         f.show()
 
+        f1, axx1 = subplots(1, 2, sharey=True, sharex=True)
+        axx1[0].plot(p_val_correct[0:28:4], correct_decoding_percentage[0:28:4], 'ro', label='A first')
+        axx1[0].plot(p_val_correct[1:28:4], correct_decoding_percentage[1:28:4], 'bo', label='B first')
+        axx1[0].plot(p_val_correct[2:28:4], correct_decoding_percentage[2:28:4], 'go', label='A last')
+        axx1[0].plot(p_val_correct[3:28:4], correct_decoding_percentage[3:28:4], 'ko', label='B last')
+        axx1[0].set_ylim((-0.1, 1.1))
+        axx1[0].set_xlim((-0.1, 1.1))
+        axx1[0].set_title('P value Vs. correct decoding fraction c%sm%s' % (CAGE[i], mouse))
+        axx1[0].set_ylabel('correct decoding fraction')
+        axx1[0].set_xlabel('P value')
+        axx1[0].legend(loc="upper right")
+
+
+        axx1[1].plot(p_val_edge[0:28:4], edge_decoding_percentage[0:28:4], 'ro', label='A first')
+        axx1[1].plot(p_val_edge[1:28:4], edge_decoding_percentage[1:28:4], 'bo', label='B first')
+        axx1[1].plot(p_val_edge[2:28:4], edge_decoding_percentage[2:28:4], 'go', label='A last')
+        axx1[1].plot(p_val_edge[3:28:4], edge_decoding_percentage[3:28:4], 'ko', label='B last')
+        axx1[1].set_ylim((-0.1, 1.1))
+        axx1[1].set_xlim((-0.1, 1.1))
+        axx1[1].set_title('P value Vs. edge decoding fraction c%sm%s' % (CAGE[i], mouse))
+        axx1[1].set_ylabel('edge decoding fraction')
+        axx1[1].set_xlabel('P value')
+        axx1[1].legend(loc="upper right")
+
+        f1.show()
         #
     raw_input('press enter')
 
