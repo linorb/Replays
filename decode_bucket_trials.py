@@ -92,7 +92,8 @@ def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin, edge_bins, 
     edge_fraction = np.zeros((number_of_permutations))
     for i in range(number_of_permutations):
         events_permutation = np.random.permutation(events)
-        statistics, _, _ =  test_bucket_trial(events_permutation, p_neuron_bin, edge_bins)
+        statistics, decoded_bins, decoded_env =  test_bucket_trial(events_permutation, p_neuron_bin, edge_bins)
+        # plot_two_env_histogram(decoded_bins, decoded_env, 'random')
         decoding_fraction[i] = (statistics[environment]['overall_decoding_fraction'])
         edge_fraction[i] = (statistics[environment]['edge_decoding_fraction'])
 
@@ -103,6 +104,27 @@ def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin, edge_bins, 
         sum(edge_fraction > correct_decoding_percentage['edge_decoding_fraction'])/np.float32(number_of_permutations)
 
     return p_val
+
+def plot_two_env_histogram(decoded_bins, decoded_env, correct_env_name):
+    env_A_mask = decoded_env == 0
+    env_B_mask = decoded_env == 1
+
+    f, axx = subplots(1, 2, sharex=True, sharey=True)
+    axx[0].hist(decoded_bins[env_A_mask], bins=11)
+    axx[0].set_title('Histogram of bins environment A')
+    axx[0].set_xlabel('bins')
+    axx[0].set_ylabel('number of frames')
+
+    axx[1].hist(decoded_bins[env_B_mask], bins=11)
+    axx[1].set_title('Histogram of bins environment B')
+    axx[1].set_xlabel('bins')
+    axx[1].set_ylabel('number of frames')
+
+    f.suptitle('Correct environment:%s' %correct_env_name)
+
+    f.show()
+
+    return
 
 def main():
     for i, mouse in enumerate(MOUSE):
@@ -160,14 +182,16 @@ def main():
 
             p_neuron_binB_positive = maximum_likelihood.calculate_p_r_s_matrix(binsB[velocityB > VELOCITY_THRESHOLD],
                                                                                eventsB[place_cells, :][:, velocityB > 0])
-            p_neuron_bin['envB_positive'] = p_neuron_binA_positive
+            p_neuron_bin['envB_positive'] = p_neuron_binB_positive
             p_neuron_binB_negative = maximum_likelihood.calculate_p_r_s_matrix(binsB[velocityB < -VELOCITY_THRESHOLD],
                                                                                eventsB[place_cells, :][:, velocityB < 0])
             p_neuron_bin['envB_negative'] = p_neuron_binB_negative
 
+            # Testing bucket trials
             for trial in range(2):
                 trial_events_A = events_tracesA[bucket_trials_indicesA[trial]][place_cells, :]
-                statistics, _, _ = test_bucket_trial(trial_events_A, p_neuron_bin, EDGE_BINS)
+                statistics, decoded_bins, decoded_env = test_bucket_trial(trial_events_A, p_neuron_bin, EDGE_BINS)
+                # plot_two_env_histogram(decoded_bins, decoded_env, 'A')
                 correct_decoding_percentage.append(statistics['envA']['overall_decoding_fraction'])
                 edge_decoding_percentage.append(statistics['envA']['edge_decoding_fraction'])
                 p_val = calculate_p_val_for_correct_decoding_trial(trial_events_A, p_neuron_bin, EDGE_BINS,
@@ -177,7 +201,8 @@ def main():
                 p_val_edge.append(p_val['edge_decoding_fraction'])
 
                 trial_events_B = events_tracesB[bucket_trials_indicesB[trial]][place_cells, :]
-                statistics, _, _ = test_bucket_trial(trial_events_B, p_neuron_bin, EDGE_BINS)
+                statistics, decoded_bins, decoded_env = test_bucket_trial(trial_events_B, p_neuron_bin, EDGE_BINS)
+                # plot_two_env_histogram(decoded_bins, decoded_env, 'B')
                 correct_decoding_percentage.append(statistics['envB']['overall_decoding_fraction'])
                 edge_decoding_percentage.append(statistics['envB']['edge_decoding_fraction'])
                 p_val = calculate_p_val_for_correct_decoding_trial(trial_events_A, p_neuron_bin, EDGE_BINS,
@@ -190,8 +215,11 @@ def main():
         f, axx = subplots(2, 2, sharex=True)
         # A bucket before
         axx[0, 0].bar(range(0, 28, 4), correct_decoding_percentage[0:28:4], color = 'blue')
+        # A bucket after
         axx[0, 0].bar(range(1, 28, 4), correct_decoding_percentage[2:28:4], color = 'yellow')
+        # B bucket before
         axx[0, 0].bar(range(2, 28, 4), correct_decoding_percentage[1:28:4], color = 'blue')
+        # B bucket after
         axx[0, 0].bar(range(3, 28, 4), correct_decoding_percentage[3:28:4], color = 'yellow')
         axx[0, 0].plot(range(28), [0.5]*28, color = 'red')
         axx[0, 0].set_title('correct decoding fraction c%sm%s' %(CAGE[i], mouse))
