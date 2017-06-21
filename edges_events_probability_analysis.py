@@ -23,25 +23,37 @@ def load_session_data(session_dir):
     log_filename = 'frameLog.csv'
     behavior_filename = 'my_mvmt.mat'
 
-    all_events = matlab.load_events_file(os.path.join(session_dir, events_filename))
-    all_traces = matlab.load_traces_matrix(os.path.join(session_dir, traces_filename))
-    frame_log = matlab.load_frame_log_file(os.path.join(session_dir,log_filename))
-    movement_data = matlab.load_mvmt_file(os.path.join(session_dir,behavior_filename))
+    all_events = matlab.load_events_file(os.path.join(session_dir,
+                                                      events_filename))
+    all_traces = matlab.load_traces_matrix(os.path.join(session_dir,
+                                                        traces_filename))
+    frame_log = matlab.load_frame_log_file(os.path.join(session_dir,
+                                                        log_filename))
+    movement_data = matlab.load_mvmt_file(os.path.join(session_dir,
+                                                       behavior_filename))
 
     events_divided_to_trials = order_events_into_trials(all_events, frame_log)
     linear_trials_indices = range(len(events_divided_to_trials))[1:-1]
-    [bins, events] = create_training_data(movement_data, events_divided_to_trials, linear_trials_indices)
+    [bins, events] = create_training_data(movement_data,
+                                          events_divided_to_trials,
+                                          linear_trials_indices)
     bins = wide_binning(bins, 24, 2)
-    velocity = concatenate_movment_data(movement_data, 'velocity', linear_trials_indices)
+    velocity = concatenate_movment_data(movement_data, 'velocity',
+                                        linear_trials_indices)
     forward_velocity = velocity > VELOCITY_THRESHOLD
     backward_velocity = velocity < -VELOCITY_THRESHOLD
-    place_cells_forward, _, _ = find_place_cells(bins[forward_velocity], events[:, forward_velocity])
-    place_cells_backward, _, _ = find_place_cells(bins[backward_velocity], events[:, backward_velocity])
-    place_cells = np.unique(np.concatenate([place_cells_forward, place_cells_backward]))
+    place_cells_forward, _, _ = find_place_cells(bins[forward_velocity],
+                                                 events[:, forward_velocity])
+    place_cells_backward, _, _ = find_place_cells(bins[backward_velocity],
+                                                  events[:, backward_velocity])
+    place_cells = np.unique(np.concatenate([place_cells_forward,
+                                            place_cells_backward]))
+    p_r_s = calculate_p_r_s_matrix(bins, all_events[place_cells, :])
     events = order_events_into_trials(all_events[place_cells, :], frame_log)
     traces = order_events_into_trials(all_traces[place_cells, :], frame_log)
 
-    return events, traces, movement_data
+    return events, traces, movement_data, p_r_s
+
 
 def calculate_conditional_activity_probability(events_segments):
     # Calculate conditional probability for events in segments of activity.
@@ -89,30 +101,36 @@ def calculate_conditional_activity_probability(events_segments):
 
     return p_edge_run, p_edge
 
-def create_segments_for_run_epochs_and_edges_entire_session(activity, movement_data,
-                                                            segment_type, seconds_range,
+def create_segments_for_run_epochs_and_edges_entire_session(activity,
+                                                            movement_data,
+                                                            segment_type,
+                                                            seconds_range,
                                                             edge_bins):
-    # Create segments for using in calculate_conditional_activity_probability afterwards
-    # that divide the session to run epochs and the activity that is done in the edges
-    # before/after the run.
+    # Create segments for using in calculate_conditional_activity_probability
+    #  afterwards that divide the session to run epochs and the activity that
+    #  is done in the edges before/after the run.
     # Args:
-    #   activity: Either events/traces matrix, as created from load_session_data
-    #   movement_data: As created from load_session_data
-    #   segment_type: A string of 'before' or 'after'
-    #   seconds_range: A list of the range of seconds to take. for example to take the
-    #       two seconds before run: segment_type='before', seconds_range=[0 2]. to take the
-    #       two seconds that starts 8 seconds after run epoch ends: segment_type='after',
-    #       seconds_range=[8 10]
-    #   edge_bins: A list of the edge bins
+    #     activity: Either events/traces matrix, as created from load_session_data movement_data:
+    #     As created from load_session_data
+    #
+    #     segment_type: A string of 'before' or 'after'
+    #
+    #     seconds_range: A list of the range of seconds to take. for
+    #     example to take the two seconds before run: segment_type='before',
+    #     seconds_range=[0 2]. to take the two seconds that starts 8 seconds
+    #     after run epoch ends: segment_type='after', seconds_range=[8 10]
+    #
+    #     edge_bins: A list of the edge bins
     session_segments = []
     number_of_trials = len(activity)
     for i in range(1,number_of_trials-1):
         trial_events = activity[i]
         bins = movement_data[i]['bin']
         bins = wide_binning(bins, 24, 2)
-        trial_segments = create_segments_for_run_epochs_and_edges_for_trial(trial_events, bins,
-                                                            segment_type, seconds_range,
-                                                            edge_bins)
+        trial_segments = create_segments_for_run_epochs_and_edges_for_trial\
+                                                    (trial_events, bins,
+                                                    segment_type, seconds_range,
+                                                    edge_bins)
         session_segments.extend(trial_segments)
 
     return session_segments
@@ -120,17 +138,19 @@ def create_segments_for_run_epochs_and_edges_entire_session(activity, movement_d
 
 
 def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
-                                                            segment_type, seconds_range,
-                                                            edge_bins):
+                                                       segment_type,
+                                                       seconds_range,
+                                                       edge_bins):
     # Create segments for one trial.
     # Args:
     #   events: A matrix of events\traces. size [#neurons, #frames]
     #   bins: An array of bins. size [#frames]
     #   segment_type: A string of 'before' or 'after'
-    #   seconds_range: A list of the range of seconds to take. for example to take the
-    #       two seconds before run: segment_type='before', seconds_range=[0 2]. to take the
-    #       two seconds that starts 8 seconds after run epoch ends: segment_type='after',
-    #       seconds_range=[8 10]
+    #   seconds_range: A list of the range of seconds to take. for example
+    #                to take the two seconds before run: segment_type='before',
+    #                seconds_range=[0 2]. to take the two seconds that starts
+    #                8 seconds after run epoch ends: segment_type='after',
+    #                seconds_range=[8 10]
     #   edge_bins: A list of the edge bins
     edge_bins_mask = np.zeros_like(bins, dtype=bool)
     for b in edge_bins:
@@ -156,21 +176,27 @@ def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
     for i in range(number_of_segments):
         segment = []
         edge_segment = events[:, edge_locations[i]]
-        frames_indices = np.array(seconds_range) * FRAME_RATE
-        try:
-            if segment_type == 'before':
-                if frames_indices[0]>0:
-                    edge_segment = edge_segment[:, -frames_indices[1]:-frames_indices[0]]
-                    bins_edge_segment = bins[edge_locations[i]][-frames_indices[1]:-frames_indices[0]]
-                else:
-                    edge_segment = edge_segment[:, -frames_indices[1]:]
-                    bins_edge_segment = bins[edge_locations[i]][-frames_indices[1]:]
-            elif segment_type == 'after':
-                edge_segment = edge_segment[:, frames_indices[0]:-frames_indices[1]]
-                bins_edge_segment = bins[edge_locations[i]][frames_indices[0]:-frames_indices[1]]
-            segment.append(edge_segment)
-        except IndexError:
-            continue
+        if seconds_range:
+            frames_indices = np.array(seconds_range) * FRAME_RATE
+            try:
+                if segment_type == 'before':
+                    if frames_indices[0]>0:
+                        edge_segment = edge_segment[:, -frames_indices[1]:
+                                                    -frames_indices[0]]
+                        bins_edge_segment = bins[edge_locations[i]]\
+                                        [-frames_indices[1]:-frames_indices[0]]
+                    else:
+                        edge_segment = edge_segment[:, -frames_indices[1]:]
+                        bins_edge_segment = bins[edge_locations[i]]\
+                                                [-frames_indices[1]:]
+                elif segment_type == 'after':
+                    edge_segment = edge_segment[:, frames_indices[0]:
+                                                    -frames_indices[1]]
+                    bins_edge_segment = bins[edge_locations[i]]\
+                                        [frames_indices[0]:-frames_indices[1]]
+                segment.append(edge_segment)
+            except IndexError:
+                continue
 
         run_segment = events[:, run_locations[i]]
         segment.append(run_segment)
@@ -190,6 +216,7 @@ def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
         segments_activity.append(segment)
 
     return segments_activity
+
 def t_test_for_deppendent_smaples(a, b):
     # Calculate t test for difference. omit "nan"s
     nan_inds = np.isnan(b) | np.isnan(a)
@@ -202,6 +229,82 @@ def t_test_for_deppendent_smaples(a, b):
     pval = scipy.stats.t.cdf(tt, len(A) - 1)
 
     return tt, 1-pval
+
+def plot_segment_activity(events_segment, trace_segment):
+    # Plot the traces and events of specific segment, i.e only the neurons
+    # that were active in that segment (according
+    # to events matrix. segment [0] - is the edge segment,
+    # segment[1] - is the run segment
+    total_neurons_activity = np.sum(events_segment[1], axis=1)
+    neurons_mask = total_neurons_activity > 0
+    relevent_event_segment = []
+    relevent_trace_segment = []
+    relevent_event_segment.append(events_segment[0][neurons_mask, :] > 0)
+    relevent_event_segment.append(events_segment[1][neurons_mask, :] > 0)
+    relevent_trace_segment.append(trace_segment[0][neurons_mask, :])
+    relevent_trace_segment.append(trace_segment[1][neurons_mask, :])
+
+    # calculate the mean std of the traces in order to plot them on the top of
+    # each other with constant spacing
+    mean_std = []
+    mean_std.append(np.mean(np.std(trace_segment[0], axis=1)))
+    mean_std.append(np.mean(np.std(trace_segment[1], axis=1)))
+
+    f, axx = subplots(1, 2, sharey=True)
+    number_of_traces =  trace_segment[0].shape[0]
+    number_of_frames_before = trace_segment[0].shape[1]
+    number_of_frames_after = trace_segment[1].shape[1]
+    for i in range(number_of_traces):
+        # fix the traces values to fit
+        traces_before = relevent_trace_segment[0][i, :] + i * mean_std[0]
+        events_before = relevent_event_segment[0][i, :] * \
+                        relevent_trace_segment[0][i, :]
+
+        axx[0].plot(range(number_of_frames_before), traces_before)
+        axx[0].plot(range(number_of_frames_before)[events_before > 0],
+                    events_before[events_before > 0], 'ro')
+
+        axx[0].set_xlabel('#Frame')
+        axx[0].set_title('Rest segment activity')
+
+        traces_after = relevent_trace_segment[1][i, :] + i * mean_std[1]
+        events_after = relevent_event_segment[1][i, :] * \
+                       relevent_trace_segment[1][i, :]
+
+        axx[1].plot(range(number_of_frames_after), traces_after)
+        axx[1].plot(range(number_of_frames_after)[events_after > 0],
+                    events_after[events_after > 0], 'ro')
+
+        axx[1].set_xlabel('#Frame')
+        axx[1].set_title('Run segment activity')
+
+    return
+
+def plot_random_segment_activities(events_segments, trace_segments,
+                                   number_of_segments_to_plot):
+    number_of_segments = len(events_segments)
+    indices_to_plot = np.random.permutation(number_of_segments)\
+                        [:number_of_segments_to_plot]
+    for i in indices_to_plot:
+        print i
+        plot_segment_activity(events_segments[i], trace_segments[i])
+        raw_input('enter to continue')
+
+    return
+
+def normalize_trace_segment(trace_segment):
+    number_of_traces = len(trace_segment[0])
+
+    normalize_segment = []
+    # Normalize each trace by its maximum
+    normalize_segment[0] = trace_segment[0]/np.max(trace_segment[0],
+                                                   axis=1)[:,None]
+    normalize_segment[1] = trace_segment[1]/np.max(trace_segment[1],
+                                                   axis=1)[:,None]
+
+    return normalize_segment
+
+
 
 def main():
     # p_edge_run_before_all = []
@@ -226,34 +329,64 @@ def main():
             print CAGE[i], mouse, day
             print
             session_dir = WORK_DIR + '\c%dm%d\day%s\%s' %(CAGE[i], mouse, day, ENV)
-            events, _, movement_data = load_session_data(session_dir)
-            activity_segments_before = create_segments_for_run_epochs_and_edges_entire_session(events,
-                                                                                        movement_data,
-                                                                                        'before', [0, 2],
-                                                                                        EDGE_BINS)
-            [p_edge_run_before, p_edge_before] = calculate_conditional_activity_probability(activity_segments_before)
+            events, traces, movement_data, _ = load_session_data(session_dir)
+            events_segments_before = \
+                create_segments_for_run_epochs_and_edges_entire_session(events,
+                                                            movement_data,
+                                                            'before', [0, 2],
+                                                            EDGE_BINS)
 
-            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_before, axis=0, nan_policy='omit')
-            # stats, p = t_test_for_deppendent_smaples(p_edge_run_before, p_edge_before)
+            traces_segments_before = \
+                create_segments_for_run_epochs_and_edges_entire_session(traces,
+                                                            movement_data,
+                                                            'before', [0, 2],
+                                                            EDGE_BINS)
+            plot_random_segment_activities(events_segments_before,
+                                           traces_segments_before,
+                                           10)
+
+            [p_edge_run_before, p_edge_before] = \
+                calculate_conditional_activity_probability(events_segments_before)
+
+            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_before,
+                                             axis=0, nan_policy='omit')
+
+            # stats, p = t_test_for_deppendent_smaples(p_edge_run_before,
+            # p_edge_before)
             p_value[mouse_name]['p_before'].extend([p])
             sign_p[mouse_name]['sign_before'].extend([np.sign(stats)])
 
             # p_edge_run_before_all.extend(p_edge_run_before)
             # p_edge_before_all.extend(p_edge_before)
 
-            activity_segments_after = create_segments_for_run_epochs_and_edges_entire_session(events,
-                                                                                        movement_data,
-                                                                                        'after', [2, 4],
-                                                                                        EDGE_BINS)
-            [p_edge_run_after, p_edge_after] = calculate_conditional_activity_probability(activity_segments_after)
+            events_segments_after = \
+                create_segments_for_run_epochs_and_edges_entire_session(events,
+                                                                movement_data,
+                                                                'after', [2, 4],
+                                                                EDGE_BINS)
+            traces_segments_after = \
+                create_segments_for_run_epochs_and_edges_entire_session(traces,
+                                                                movement_data,
+                                                                'after', [2, 4],
+                                                                EDGE_BINS)
+            plot_random_segment_activities(events_segments_after,
+                                           traces_segments_after,
+                                           10)
 
-            stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_after, axis=0, nan_policy='omit')
+            [p_edge_run_after, p_edge_after] = \
+                calculate_conditional_activity_probability(events_segments_after)
+
+            stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_after,
+                                             axis=0, nan_policy='omit')
             # stats, p = t_test_for_deppendent_smaples(p_edge_run_after, p_edge_after)
             p_value[mouse_name]['p_after'].extend([p])
             sign_p[mouse_name]['sign_after'].extend([np.sign(stats)])
 
-            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_run_after, axis=0, nan_policy='omit')
-            # stats, p = t_test_for_deppendent_smaples(p_edge_run_before, p_edge_run_after)
+            stats, p = scipy.stats.ttest_rel(p_edge_run_before,
+                                             p_edge_run_after, axis=0,
+                                             nan_policy='omit')
+            # stats, p = t_test_for_deppendent_smaples(p_edge_run_before,
+            # p_edge_run_after)
             p_value[mouse_name]['p_before_after'].extend([p])
             sign_p[mouse_name]['sign_before_after'].extend([np.sign(stats)])
 
@@ -262,7 +395,8 @@ def main():
 
         f, axx = subplots(2, 3, sharex=True)
         axx[0, 0].bar(range(7), p_value[mouse_name]['p_before'])
-        axx[0, 0].set_title('p(active before run|active in run) - p(active before run)', size=20)
+        axx[0, 0].set_title('p(active before run|active in run) - '
+                            'p(active before run)', size=20)
         axx[0, 0].set_ylabel('P value', fontsize=20)
         axx[0, 0].plot(range(7), [0.05]*7, color='red')
         axx[1, 0].bar(range(7), sign_p[mouse_name]['sign_before'])
@@ -270,7 +404,8 @@ def main():
         axx[1, 0].set_xlabel('#session', fontsize=20)
 
         axx[0, 1].bar(range(7), p_value[mouse_name]['p_after'])
-        axx[0, 1].set_title('p(active after run|active in run) - p(active after run)', size=20)
+        axx[0, 1].set_title('p(active after run|active in run) - '
+                            'p(active after run)', size=20)
         axx[0, 1].set_ylabel('P value', fontsize=20)
         axx[0, 1].plot(range(7), [0.05] * 7, color='red')
         axx[1, 1].bar(range(7), sign_p[mouse_name]['sign_after'])
@@ -278,14 +413,16 @@ def main():
         axx[1, 1].set_xlabel('#session', fontsize=20)
 
         axx[0, 2].bar(range(7), p_value[mouse_name]['p_before_after'])
-        axx[0, 2].set_title('p(active before run|active in run) - p(active after run|active in run)', size=20)
+        axx[0, 2].set_title('p(active before run|active in run) - '
+                            'p(active after run|active in run)', size=20)
         axx[0, 2].set_ylabel('P value', fontsize=20)
         axx[0, 2].plot(range(7), [0.05] * 7, color='red')
         axx[1, 2].bar(range(7), sign_p[mouse_name]['sign_before_after'])
         axx[1, 2].set_ylabel('sign', fontsize=20)
         axx[1, 2].set_xlabel('#session', fontsize=20)
 
-        f.suptitle('C%sM%s %s T test paired samples' %(CAGE[i], mouse, ENV), fontsize=25)
+        f.suptitle('C%sM%s %s T test paired samples' %(CAGE[i], mouse, ENV),
+                   fontsize=25)
         # f.set_title('t-test for paired samples')
         f.show()
 
