@@ -91,6 +91,7 @@ def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin, edge_bins, 
     decoding_fraction = np.zeros((number_of_permutations))
     edge_fraction = np.zeros((number_of_permutations))
     for i in range(number_of_permutations):
+        # shuffling neurons’ identities
         events_permutation = np.random.permutation(events)
         statistics, decoded_bins, decoded_env =  test_bucket_trial(events_permutation, p_neuron_bin, edge_bins)
         # plot_two_env_histogram(decoded_bins, decoded_env, 'random')
