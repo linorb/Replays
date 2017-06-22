@@ -5,6 +5,7 @@ import scipy.stats
 
 from bambi.tools import matlab
 from bambi.tools.activity_loading import *
+from bambi.analysis.maximum_likelihood import *
 from zivlab.analysis.place_cells import find_place_cells
 
 EDGE_BINS = [0, 1, 10, 11]
@@ -14,7 +15,7 @@ CAGE = [6, 7, 11, 13]
 ENV = 'envA'
 DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
-VELOCITY_THRESHOLD = 1
+VELOCITY_THRESHOLD = 5
 
 def load_session_data(session_dir):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -43,12 +44,20 @@ def load_session_data(session_dir):
     forward_velocity = velocity > VELOCITY_THRESHOLD
     backward_velocity = velocity < -VELOCITY_THRESHOLD
     place_cells_forward, _, _ = find_place_cells(bins[forward_velocity],
-                                                 events[:, forward_velocity])
+                                                 events[:, forward_velocity],
+                                                 min_number_of_events=15)
     place_cells_backward, _, _ = find_place_cells(bins[backward_velocity],
-                                                  events[:, backward_velocity])
+                                                  events[:, backward_velocity],
+                                                  min_number_of_events=15)
     place_cells = np.unique(np.concatenate([place_cells_forward,
                                             place_cells_backward]))
-    p_r_s = calculate_p_r_s_matrix(bins, all_events[place_cells, :])
+    p_r_s = {}
+    p_r_s['forward'] = calculate_p_r_s_matrix(bins[forward_velocity],
+                                              events[place_cells, :]\
+                                              [:,forward_velocity])
+    p_r_s['backward'] = calculate_p_r_s_matrix(bins[backward_velocity],
+                                               events[place_cells, :]\
+                                               [:,backward_velocity])
     events = order_events_into_trials(all_events[place_cells, :], frame_log)
     traces = order_events_into_trials(all_traces[place_cells, :], frame_log)
 
@@ -194,10 +203,10 @@ def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
                                                     -frames_indices[1]]
                     bins_edge_segment = bins[edge_locations[i]]\
                                         [frames_indices[0]:-frames_indices[1]]
-                segment.append(edge_segment)
             except IndexError:
                 continue
 
+        segment.append(edge_segment)
         run_segment = events[:, run_locations[i]]
         segment.append(run_segment)
 
@@ -230,67 +239,67 @@ def t_test_for_deppendent_smaples(a, b):
 
     return tt, 1-pval
 
-def plot_segment_activity(events_segment, trace_segment):
-    # Plot the traces and events of specific segment, i.e only the neurons
-    # that were active in that segment (according
-    # to events matrix. segment [0] - is the edge segment,
-    # segment[1] - is the run segment
-    total_neurons_activity = np.sum(events_segment[1], axis=1)
-    neurons_mask = total_neurons_activity > 0
-    relevent_event_segment = []
-    relevent_trace_segment = []
-    relevent_event_segment.append(events_segment[0][neurons_mask, :] > 0)
-    relevent_event_segment.append(events_segment[1][neurons_mask, :] > 0)
-    relevent_trace_segment.append(trace_segment[0][neurons_mask, :])
-    relevent_trace_segment.append(trace_segment[1][neurons_mask, :])
+# def plot_segment_activity(events_segment, trace_segment):
+#     # Plot the traces and events of specific segment, i.e only the neurons
+#     # that were active in that segment (according
+#     # to events matrix. segment [0] - is the edge segment,
+#     # segment[1] - is the run segment
+#     total_neurons_activity = np.sum(events_segment[1], axis=1)
+#     neurons_mask = total_neurons_activity > 0
+#     relevent_event_segment = []
+#     relevent_trace_segment = []
+#     relevent_event_segment.append(events_segment[0][neurons_mask, :] > 0)
+#     relevent_event_segment.append(events_segment[1][neurons_mask, :] > 0)
+#     relevent_trace_segment.append(trace_segment[0][neurons_mask, :])
+#     relevent_trace_segment.append(trace_segment[1][neurons_mask, :])
+#
+#     # calculate the mean std of the traces in order to plot them on the top of
+#     # each other with constant spacing
+#     mean_std = []
+#     mean_std.append(np.mean(np.std(trace_segment[0], axis=1)))
+#     mean_std.append(np.mean(np.std(trace_segment[1], axis=1)))
+#
+#     f, axx = subplots(1, 2, sharey=True)
+#     number_of_traces = trace_segment[0].shape[0]
+#     number_of_frames_before = trace_segment[0].shape[1]
+#     number_of_frames_after = trace_segment[1].shape[1]
+#     for i in range(number_of_traces):
+#         # fix the traces values to fit
+#         traces_before = relevent_trace_segment[0][i, :] + i * mean_std[0]
+#         events_before = relevent_event_segment[0][i, :] * \
+#                         relevent_trace_segment[0][i, :]
+#
+#         axx[0].plot(range(number_of_frames_before), traces_before)
+#         axx[0].plot(np.arange(number_of_frames_before)[events_before > 0],
+#                     events_before[events_before > 0], 'ro')
+#
+#         axx[0].set_xlabel('#Frame')
+#         axx[0].set_title('Rest segment activity')
+#
+#         traces_after = relevent_trace_segment[1][i, :] + i * mean_std[1]
+#         events_after = relevent_event_segment[1][i, :] * \
+#                        relevent_trace_segment[1][i, :]
+#
+#         axx[1].plot(range(number_of_frames_after), traces_after)
+#         axx[1].plot(np.arange(number_of_frames_after)[events_after > 0],
+#                     events_after[events_after > 0], 'ro')
+#
+#         axx[1].set_xlabel('#Frame')
+#         axx[1].set_title('Run segment activity')
+#
+#     return
 
-    # calculate the mean std of the traces in order to plot them on the top of
-    # each other with constant spacing
-    mean_std = []
-    mean_std.append(np.mean(np.std(trace_segment[0], axis=1)))
-    mean_std.append(np.mean(np.std(trace_segment[1], axis=1)))
-
-    f, axx = subplots(1, 2, sharey=True)
-    number_of_traces =  trace_segment[0].shape[0]
-    number_of_frames_before = trace_segment[0].shape[1]
-    number_of_frames_after = trace_segment[1].shape[1]
-    for i in range(number_of_traces):
-        # fix the traces values to fit
-        traces_before = relevent_trace_segment[0][i, :] + i * mean_std[0]
-        events_before = relevent_event_segment[0][i, :] * \
-                        relevent_trace_segment[0][i, :]
-
-        axx[0].plot(range(number_of_frames_before), traces_before)
-        axx[0].plot(range(number_of_frames_before)[events_before > 0],
-                    events_before[events_before > 0], 'ro')
-
-        axx[0].set_xlabel('#Frame')
-        axx[0].set_title('Rest segment activity')
-
-        traces_after = relevent_trace_segment[1][i, :] + i * mean_std[1]
-        events_after = relevent_event_segment[1][i, :] * \
-                       relevent_trace_segment[1][i, :]
-
-        axx[1].plot(range(number_of_frames_after), traces_after)
-        axx[1].plot(range(number_of_frames_after)[events_after > 0],
-                    events_after[events_after > 0], 'ro')
-
-        axx[1].set_xlabel('#Frame')
-        axx[1].set_title('Run segment activity')
-
-    return
-
-def plot_random_segment_activities(events_segments, trace_segments,
-                                   number_of_segments_to_plot):
-    number_of_segments = len(events_segments)
-    indices_to_plot = np.random.permutation(number_of_segments)\
-                        [:number_of_segments_to_plot]
-    for i in indices_to_plot:
-        print i
-        plot_segment_activity(events_segments[i], trace_segments[i])
-        raw_input('enter to continue')
-
-    return
+# def plot_random_segment_activities(events_segments, trace_segments,
+#                                    number_of_segments_to_plot):
+#     number_of_segments = len(events_segments)
+#     indices_to_plot = np.random.permutation(number_of_segments)\
+#                         [:number_of_segments_to_plot]
+#     for i in indices_to_plot:
+#         print i
+#         plot_segment_activity(events_segments[i], trace_segments[i])
+#         raw_input('enter to continue')
+#
+#     return
 
 def normalize_trace_segment(trace_segment):
     number_of_traces = len(trace_segment[0])
@@ -341,9 +350,9 @@ def main():
                                                             movement_data,
                                                             'before', [0, 2],
                                                             EDGE_BINS)
-            plot_random_segment_activities(events_segments_before,
-                                           traces_segments_before,
-                                           10)
+            # plot_random_segment_activities(events_segments_before,
+            #                                traces_segments_before,
+            #                                10)
 
             [p_edge_run_before, p_edge_before] = \
                 calculate_conditional_activity_probability(events_segments_before)
@@ -369,9 +378,9 @@ def main():
                                                                 movement_data,
                                                                 'after', [2, 4],
                                                                 EDGE_BINS)
-            plot_random_segment_activities(events_segments_after,
-                                           traces_segments_after,
-                                           10)
+            # plot_random_segment_activities(events_segments_after,
+            #                                traces_segments_after,
+            #                                10)
 
             [p_edge_run_after, p_edge_after] = \
                 calculate_conditional_activity_probability(events_segments_after)
@@ -427,5 +436,3 @@ def main():
         f.show()
 
     raw_input('press enter to quit')
-
-main()
