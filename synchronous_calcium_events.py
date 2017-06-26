@@ -27,6 +27,43 @@ def plot_all_SCE_segments(segments, SCE_masks, p_r_s):
 
     return
 
+def count_neurons_in_all_SCEs(segments, SCE_masks):
+
+    neurons_counter_all_SCE = []
+    fraction_of_run_all_SCE = []
+    for segment, SCE_mask in zip(segments, SCE_masks):
+        neurons_counter, fraction_of_run = \
+            count_neurons_in_SCE(segment, SCE_mask)
+        neurons_counter_all_SCE.append(neurons_counter)
+        fraction_of_run_all_SCE.append(fraction_of_run)
+
+    neurons_counter_all_SCE = np.concatenate(neurons_counter_all_SCE)
+    fraction_of_run_all_SCE = np.concatenate(fraction_of_run_all_SCE)
+
+    return neurons_counter_all_SCE, fraction_of_run_all_SCE
+
+def count_neurons_in_SCE(segment, SCE_mask):
+    # Count the number of neurons participate in SCE. and the fraction among
+    # them that is active also in run segment
+    frame_rate = 1 / float(FRAMES_PER_SECOND)
+    frames_per_window = WINDOW / frame_rate
+    number_of_frames = len(SCE_mask)
+    neurons_counter = []
+    fraction_of_run = []
+    active_neurons_in_run = np.argwhere(np.sum(segment[1], axis=1) > 0)
+    for frame in range(number_of_frames):
+        if SCE_mask[frame]:
+            SCE_activity = segment[0][:, frame:frame + frames_per_window]
+            number_of_active_neurons_in_SCE = np.sum(np.sum(SCE_activity>0, axis=1))
+            fraction_of_active_neurons_in_SCE_and_run =\
+                np.sum(np.sum(SCE_activity[active_neurons_in_run, :]>0, axis=1))/\
+                np.float(number_of_active_neurons_in_SCE)
+
+            neurons_counter.append(number_of_active_neurons_in_SCE)
+            fraction_of_run.append(fraction_of_active_neurons_in_SCE_and_run)
+
+    return neurons_counter, fraction_of_run
+
 def count_SCE_participation_per_neuron(segment, SCE_mask):
     # Count the number of SCE participation in segment
     frame_rate = 1 / float(FRAMES_PER_SECOND)
@@ -196,22 +233,6 @@ def main():
                                                             movement_data,
                                                             'before', [],
                                                             EDGE_BINS)
-            # Calculate the conditional probability to be active in edge given
-            # activity in run, and the highest activity level
-            p_edge_run_before, _ = \
-                calculate_conditional_activity_probability(
-                    events_segments_before)
-            p_edge_run_all_mice.append(p_edge_run_before)
-            # Calculate the distribution of p(active in edge|active in run)
-            hist_probability, edges_probability = np.histogram(p_edge_run_before[
-                                           ~np.isnan(p_edge_run_before)],
-                                       normed=True)
-            pdf = np.cumsum(hist_probability) * (edges_probability[1])
-            high_conditional_probability = edges_probability[
-                np.where(pdf >= 1 - HIGH_PRECENTAGE)[0][0] + 1]
-
-            high_probability_edge_neurons = p_edge_run_before > \
-                                                  high_conditional_probability
 
             # Find SCE and the neurons that participate in it
             concatenated_edge_segments = \
@@ -224,52 +245,22 @@ def main():
             SCE_masks = find_SCE_in_segments(events_segments_before,
                                              chance_SCE_activation)
 
-            SCE_counts = \
-                count_SCE_participation_in_all_segments(events_segments_before,
-                                                        SCE_masks)
-            SCE_counts_all_mice.append(SCE_counts)
-            hist_SCE, edges_SCE = np.histogram(SCE_counts, normed=True)
-            pdf = np.cumsum(hist_SCE) * (edges_SCE[1])
-            high_SCE_participation = edges_SCE[
-                np.where(pdf >= 1 - HIGH_PRECENTAGE)[0][0] + 1]
+            neurons_counter, fraction_of_run = \
+                count_neurons_in_all_SCEs(events_segments_before, SCE_masks)
+            relevant_indices = ~np.isnan(fraction_of_run)
 
-            high_SCE_participation_neurons = SCE_counts > high_SCE_participation
+            f, axx = subplots(3, 1)
+            axx[0].hist(neurons_counter[relevant_indices], normed=True)
+            axx[0].set_title('number of neurons per SCE histogram')
+            axx[1].hist(fraction_of_run[relevant_indices], normed=True)
+            axx[1].set_title('Fraction of cells in SCE and following run')
+            axx[2].plot(neurons_counter[relevant_indices],
+                        fraction_of_run[relevant_indices], '*')
+            axx[2].set_title('number of neurons in SCE Vs.'
+                             ' fraction of congruente neurons in run')
+            f.show()
 
-            # figure for histograms and SCE Vs. conditional probability
-            # f, axx = subplots(3, 2)
-            # axx[0, 0].bar(edges_probability[1:], hist_probability, width=0.07)
-            # axx[0, 0].set_title('Histogram of p(edge|run)')
-            # axx[0, 1].plot(high_probability_edge_neurons)
-            # axx[0, 1].set_title('High conditional probability activation in edge')
-            # axx[1, 0].bar(edges_SCE[1:], hist_SCE)
-            # axx[1, 0].set_title('Histogram of SCE participant')
-            # axx[1, 1].plot(high_SCE_participation_neurons)
-            # axx[1, 1].set_title('high SCE activation')
-            # combined = np.logical_and(high_probability_edge_neurons,
-            #                               high_SCE_participation_neurons)
-            # axx[2, 1].plot(combined)
-            # axx[2, 1].set_title('combined')
-            # print 'number of combined:', np.sum(combined)
-            # axx[2, 0].plot(SCE_counts, p_edge_run_before, '*')
-            # axx[2, 0].set_title('SCE counts Vs. p(edge|run)')
-            # f.show()
 
-            # plot_all_SCE_segments(events_segments_before, SCE_masks, p_r_s)
-
-    SCE_counts_all_mice = np.concatenate(SCE_counts_all_mice)
-    p_edge_run_all_mice =np.concatenate(p_edge_run_all_mice)
-    relevent_indices = ~np.isnan(p_edge_run_all_mice)
-
-    f, axx = subplots(3, 1)
-    axx[0].hist(p_edge_run_all_mice[relevent_indices])
-    axx[0].set_title('p(edge|run) histogram')
-    axx[1].hist(SCE_counts_all_mice)
-    axx[1].set_title('SCE counts histogram')
-    axx[2].plot(SCE_counts_all_mice[relevent_indices],
-                p_edge_run_all_mice[relevent_indices], '*')
-    axx[2].set_title('SCE counts Vs p(edge|run)')
-    f.suptitle('All mice neurons')
-    f.show()
 
     raw_input('press enter to quit')
 
