@@ -181,7 +181,8 @@ def concatenate_segments(events_segments, segment_type):
     return concatenated_segments
 
 def main():
-
+    SCE_counts_all_mice = []
+    p_edge_run_all_mice = []
     for i, mouse in enumerate(MOUSE):
 
         for day in DAYS:
@@ -200,7 +201,7 @@ def main():
             p_edge_run_before, _ = \
                 calculate_conditional_activity_probability(
                     events_segments_before)
-
+            p_edge_run_all_mice.append(p_edge_run_before)
             # Calculate the distribution of p(active in edge|active in run)
             hist_probability, edges_probability = np.histogram(p_edge_run_before[
                                            ~np.isnan(p_edge_run_before)],
@@ -226,7 +227,7 @@ def main():
             SCE_counts = \
                 count_SCE_participation_in_all_segments(events_segments_before,
                                                         SCE_masks)
-
+            SCE_counts_all_mice.append(SCE_counts)
             hist_SCE, edges_SCE = np.histogram(SCE_counts, normed=True)
             pdf = np.cumsum(hist_SCE) * (edges_SCE[1])
             high_SCE_participation = edges_SCE[
@@ -235,23 +236,42 @@ def main():
             high_SCE_participation_neurons = SCE_counts > high_SCE_participation
 
             # figure for histograms and SCE Vs. conditional probability
-            f, axx = subplots(3, 2)
-            axx[0, 0].bar(edges_probability[1:], hist_probability, width=0.07)
-            axx[0, 0].set_title('Histogram of p(edge|run)')
-            axx[0, 1].plot(high_probability_edge_neurons)
-            axx[0, 1].set_title('High conditional probability activation in edge')
-            axx[1, 0].bar(edges_SCE[1:], hist_SCE)
-            axx[1, 0].set_title('Histogram of SCE participant')
-            axx[1, 1].plot(high_SCE_participation_neurons)
-            axx[1, 1].set_title('high SCE activation')
-            combined = np.logical_and(high_probability_edge_neurons,
-                                          high_SCE_participation_neurons)
-            axx[2, 1].plot(combined)
-            axx[2, 1].set_title('combined')
-            print 'number of combined:', np.sum(combined)
+            # f, axx = subplots(3, 2)
+            # axx[0, 0].bar(edges_probability[1:], hist_probability, width=0.07)
+            # axx[0, 0].set_title('Histogram of p(edge|run)')
+            # axx[0, 1].plot(high_probability_edge_neurons)
+            # axx[0, 1].set_title('High conditional probability activation in edge')
+            # axx[1, 0].bar(edges_SCE[1:], hist_SCE)
+            # axx[1, 0].set_title('Histogram of SCE participant')
+            # axx[1, 1].plot(high_SCE_participation_neurons)
+            # axx[1, 1].set_title('high SCE activation')
+            # combined = np.logical_and(high_probability_edge_neurons,
+            #                               high_SCE_participation_neurons)
+            # axx[2, 1].plot(combined)
+            # axx[2, 1].set_title('combined')
+            # print 'number of combined:', np.sum(combined)
+            # axx[2, 0].plot(SCE_counts, p_edge_run_before, '*')
+            # axx[2, 0].set_title('SCE counts Vs. p(edge|run)')
+            # f.show()
 
-            f.show()
             # plot_all_SCE_segments(events_segments_before, SCE_masks, p_r_s)
+
+    SCE_counts_all_mice = np.concatenate(SCE_counts_all_mice)
+    p_edge_run_all_mice =np.concatenate(p_edge_run_all_mice)
+    relevent_indices = ~np.isnan(p_edge_run_all_mice)
+
+    f, axx = subplots(3, 1)
+    axx[0].hist(p_edge_run_all_mice[relevent_indices])
+    axx[0].set_title('p(edge|run) histogram')
+    axx[1].hist(SCE_counts_all_mice)
+    axx[1].set_title('SCE counts histogram')
+    axx[2].plot(SCE_counts_all_mice[relevent_indices],
+                p_edge_run_all_mice[relevent_indices], '*')
+    axx[2].set_title('SCE counts Vs p(edge|run)')
+    f.suptitle('All mice neurons')
+    f.show()
+
+    raw_input('press enter to quit')
 
 if __name__ == '__main__':
     main()
