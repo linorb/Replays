@@ -292,6 +292,5 @@ def main():
         #
     raw_input('press enter')
 
-
-
-main()
+if __name__ == '__main__':
+    main()
