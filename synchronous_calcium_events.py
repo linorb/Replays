@@ -256,11 +256,11 @@ def main():
     axx[0].hist(neurons_counter_all_mice[relevant_indices], normed=True)
     axx[0].set_title('number of neurons per SCE histogram')
     axx[1].hist(count_run_all_mice[relevant_indices], normed=True)
-    axx[1].set_title('Fraction of cells in SCE and following run')
+    axx[1].set_title('number of cells in SCE and following run')
     axx[2].plot(neurons_counter_all_mice[relevant_indices],
                 count_run_all_mice[relevant_indices], '*')
     axx[2].set_title('number of neurons in SCE Vs.'
-                     ' fraction of congruente neurons in run')
+                     ' number of congruente neurons in run')
     f.show()
     raw_input('press enter to quit')
 
