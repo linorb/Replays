@@ -218,8 +218,8 @@ def concatenate_segments(events_segments, segment_type):
     return concatenated_segments
 
 def main():
-    SCE_counts_all_mice = []
-    p_edge_run_all_mice = []
+    neurons_counter_all_mice = []
+    fraction_of_run_all_mice = []
     for i, mouse in enumerate(MOUSE):
 
         for day in DAYS:
@@ -227,7 +227,6 @@ def main():
             print
             session_dir = WORK_DIR + '\c%dm%d\day%s\%s' %(CAGE[i], mouse, day, ENV)
             events, traces, movement_data, _, p_r_s = load_session_data(session_dir)
-            print 'number of neurons:', events[0].shape[0]
             events_segments_before = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
                                                             movement_data,
@@ -241,27 +240,29 @@ def main():
             chance_SCE_activation = \
                 calculte_SCE_chance_level(concatenated_edge_segments)
 
-            print 'Chance SCE activation:', chance_SCE_activation
             SCE_masks = find_SCE_in_segments(events_segments_before,
                                              chance_SCE_activation)
 
             neurons_counter, fraction_of_run = \
                 count_neurons_in_all_SCEs(events_segments_before, SCE_masks)
-            relevant_indices = ~np.isnan(fraction_of_run)
 
-            f, axx = subplots(3, 1)
-            axx[0].hist(neurons_counter[relevant_indices], normed=True)
-            axx[0].set_title('number of neurons per SCE histogram')
-            axx[1].hist(fraction_of_run[relevant_indices], normed=True)
-            axx[1].set_title('Fraction of cells in SCE and following run')
-            axx[2].plot(neurons_counter[relevant_indices],
-                        fraction_of_run[relevant_indices], '*')
-            axx[2].set_title('number of neurons in SCE Vs.'
-                             ' fraction of congruente neurons in run')
-            f.show()
+            neurons_counter_all_mice.append(neurons_counter)
+            fraction_of_run_all_mice.append(fraction_of_run)
 
+    neurons_counter_all_mice = np.concatenate(neurons_counter_all_mice)
+    fraction_of_run_all_mice = np.concatenate(fraction_of_run_all_mice)
 
-
+    relevant_indices = ~np.isnan(fraction_of_run_all_mice)
+    f, axx = subplots(3, 1)
+    axx[0].hist(neurons_counter_all_mice[relevant_indices], normed=True)
+    axx[0].set_title('number of neurons per SCE histogram')
+    axx[1].hist(fraction_of_run_all_mice[relevant_indices], normed=True)
+    axx[1].set_title('Fraction of cells in SCE and following run')
+    axx[2].plot(neurons_counter_all_mice[relevant_indices],
+                fraction_of_run_all_mice[relevant_indices], '*')
+    axx[2].set_title('number of neurons in SCE Vs.'
+                     ' fraction of congruente neurons in run')
+    f.show()
     raw_input('press enter to quit')
 
 if __name__ == '__main__':
