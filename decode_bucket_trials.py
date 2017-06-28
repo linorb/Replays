@@ -136,11 +136,12 @@ def plot_decoded_bins(decoded_bins, decoded_env, correct_env_name):
     envB_bins[decoded_env == 1] = decoded_bins[decoded_env == 1]
 
 
-    f, axx = subplots(2, 1, sharex=True)
+    f, axx = subplots(2, 1, sharex=True, sharey=True)
     axx[0].plot(envA_bins, '*')
     axx[0].set_title('Decoded bins in environment A')
     axx[1].plot(envB_bins, '*')
     axx[1].set_title('Decoded bins in environment B')
+    axx[1].set_ylim((-0.1, 12))
     f.suptitle('Correct environment:%s' %(correct_env_name))
 
     f.show()
