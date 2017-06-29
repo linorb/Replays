@@ -11,7 +11,7 @@ EDGE_BINS = [0, 1, 10, 11]
 FRAME_RATE = 20 #Hz
 MOUSE = [4, 4, 1, 1]
 CAGE = [6, 7, 11, 13]
-ENV = 'envB'
+ENV = 'envA'
 DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 
@@ -206,6 +206,8 @@ def main():
 
     p_value = {}
     sign_p = {}
+    f = figure()
+    mouse_color = ['r', 'b', 'c', 'k']
     for i, mouse in enumerate(MOUSE):
         mouse_name = 'c%dm%d' %(CAGE[i], mouse)
         p_value[mouse_name] = {'p_before': [],
@@ -253,32 +255,18 @@ def main():
             # p_edge_run_after_all.extend(p_edge_run_after)
             # p_edge_after_all.extend(p_edge_after)
 
-        f, axx = subplots(2, 3, sharex=True)
-        axx[0, 0].bar(range(7), p_value[mouse_name]['p_before'])
-        axx[0, 0].set_title('p(active before run|active in run) - p(active before run)', size=20)
-        axx[0, 0].set_ylabel('P value', fontsize=20)
-        axx[1, 0].bar(range(7), sign_p[mouse_name]['sign_before'])
-        axx[1, 0].set_ylabel('sign', fontsize=20)
-        axx[1, 0].set_xlabel('#session', fontsize=20)
 
-        axx[0, 1].bar(range(7), p_value[mouse_name]['p_after'])
-        axx[0, 1].set_title('p(active after run|active in run) - p(active after run)', size=20)
-        axx[0, 1].set_ylabel('P value', fontsize=20)
-        axx[1, 1].bar(range(7), sign_p[mouse_name]['sign_after'])
-        axx[1, 1].set_ylabel('sign', fontsize=20)
-        axx[1, 1].set_xlabel('#session', fontsize=20)
+        plot(p_value[mouse_name]['p_before'], p_value[mouse_name]['p_after'],
+             markerfacecolor=mouse_color[i], marker= 'o', linestyle='None')
 
-        axx[0, 2].bar(range(7), p_value[mouse_name]['p_before_after'])
-        axx[0, 2].set_title('p(active before run|active in run) - p(active after run|active in run)', size=20)
-        axx[0, 2].set_ylabel('P value', fontsize=20)
-        axx[1, 2].bar(range(7), sign_p[mouse_name]['sign_before_after'])
-        axx[1, 2].set_ylabel('sign', fontsize=20)
-        axx[1, 2].set_xlabel('#session', fontsize=20)
-
-        f.suptitle('C%sM%s %s T test paired samples' %(CAGE[i], mouse, ENV), fontsize=25)
-        # f.set_title('t-test for paired samples')
-        f.show()
-
+    plot(np.arange(0, 1, 0.1), np.ones(10)*0.05, 'r')
+    plot(np.ones(10)*0.05, np.arange(0, 1, 0.1), 'r')
+    ylabel('P value of: p(active after run|active in run) - p(active after run)')
+    xlabel('P value of: p(active before run|active in run) - p(active before run)')
+    ylim((-0.1, 1.1))
+    xlim((-0.1, 1.1))
+    title('P values of conditional probability in edges given run Vs probability in edges')
+    f.show()
     raw_input('press enter to quit')
 
 main()
