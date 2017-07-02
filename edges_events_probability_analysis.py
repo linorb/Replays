@@ -11,7 +11,7 @@ EDGE_BINS = [0, 1, 10, 11]
 FRAME_RATE = 20 #Hz
 MOUSE = [4, 4, 1, 1]
 CAGE = [6, 7, 11, 13]
-ENV = 'envA'
+ENV = 'envB'
 DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 
@@ -151,22 +151,24 @@ def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
     for i in range(number_of_segments):
         segment = []
         edge_segment = events[:, edge_locations[i]]
-        frames_indices = np.array(seconds_range) * FRAME_RATE
-        try:
-            if segment_type == 'before':
-                if frames_indices[0]>0:
-                    edge_segment = edge_segment[:, -frames_indices[1]:-frames_indices[0]]
-                    bins_edge_segment = bins[edge_locations[i]][-frames_indices[1]:-frames_indices[0]]
-                else:
-                    edge_segment = edge_segment[:, -frames_indices[1]:]
-                    bins_edge_segment = bins[edge_locations[i]][-frames_indices[1]:]
-            elif segment_type == 'after':
-                edge_segment = edge_segment[:, frames_indices[0]:-frames_indices[1]]
-                bins_edge_segment = bins[edge_locations[i]][frames_indices[0]:-frames_indices[1]]
-            segment.append(edge_segment)
-        except IndexError:
-            continue
+        if seconds_range:
+            frames_indices = np.array(seconds_range) * FRAME_RATE
+            try:
+                if segment_type == 'before':
+                    if frames_indices[0]>0:
+                        edge_segment = edge_segment[:, -frames_indices[1]:-frames_indices[0]]
+                        bins_edge_segment = bins[edge_locations[i]][-frames_indices[1]:-frames_indices[0]]
+                    else:
+                        edge_segment = edge_segment[:, -frames_indices[1]:]
+                        bins_edge_segment = bins[edge_locations[i]][-frames_indices[1]:]
+                elif segment_type == 'after':
+                    edge_segment = edge_segment[:, frames_indices[0]:-frames_indices[1]]
+                    bins_edge_segment = bins[edge_locations[i]][frames_indices[0]:-frames_indices[1]]
 
+            except IndexError:
+                continue
+
+        segment.append(edge_segment)
         run_segment = events[:, run_locations[i]]
         segment.append(run_segment)
 
@@ -242,13 +244,13 @@ def main():
                                                                                         EDGE_BINS)
             [p_edge_run_after, p_edge_after] = calculate_conditional_activity_probability(activity_segments_after)
 
+            # T test for p_edge_run_after - p_edge_after according to:
+            # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.ttest_rel.html
             stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_after, axis=0, nan_policy='omit')
-            # stats, p = t_test_for_deppendent_smaples(p_edge_run_after, p_edge_after)
             p_value[mouse_name]['p_after'].extend([p])
             sign_p[mouse_name]['sign_after'].extend([np.sign(stats)])
 
             stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_run_after, axis=0, nan_policy='omit')
-            # stats, p = t_test_for_deppendent_smaples(p_edge_run_before, p_edge_run_after)
             p_value[mouse_name]['p_before_after'].extend([p])
             sign_p[mouse_name]['sign_before_after'].extend([np.sign(stats)])
 
@@ -256,11 +258,17 @@ def main():
             # p_edge_after_all.extend(p_edge_after)
 
 
-        plot(p_value[mouse_name]['p_before'], p_value[mouse_name]['p_after'],
+        plot(np.array(p_value[mouse_name]['p_before'])*np.array(sign_p[mouse_name]['sign_before']),
+             np.array(p_value[mouse_name]['p_after'])*np.array(sign_p[mouse_name]['sign_after']),
              markerfacecolor=mouse_color[i], marker= 'o', linestyle='None')
 
-    plot(np.arange(0, 1, 0.1), np.ones(10)*0.05, 'r')
-    plot(np.ones(10)*0.05, np.arange(0, 1, 0.1), 'r')
+    plot(np.arange(0, 1.1, 0.1), np.ones(11)*0.05, 'r')
+    plot(np.arange(0, 1.1, 0.1), np.zeros(11), 'k')
+    plot(np.arange(-0.1, 1.1, 0.1), np.ones(13) * (-0.05), 'b')
+    plot(np.ones(11)*0.05, np.arange(0, 1.1, 0.1), 'r')
+    plot(np.zeros(11), np.arange(0, 1.1, 0.1), 'k')
+    plot(np.ones(13) * (-0.05), np.arange(-0.1, 1.1, 0.1), 'b')
+
     ylabel('P value of: p(active after run|active in run) - p(active after run)')
     xlabel('P value of: p(active before run|active in run) - p(active before run)')
     ylim((-0.1, 1.1))
