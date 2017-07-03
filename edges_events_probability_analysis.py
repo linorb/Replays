@@ -359,13 +359,9 @@ def main():
             stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_before,
                                              axis=0, nan_policy='omit')
 
-            # stats, p = t_test_for_deppendent_smaples(p_edge_run_before,
-            # p_edge_before)
             p_value[mouse_name]['p_before'].extend([p])
             sign_p[mouse_name]['sign_before'].extend([np.sign(stats)])
 
-            # p_edge_run_before_all.extend(p_edge_run_before)
-            # p_edge_before_all.extend(p_edge_before)
 
             events_segments_after = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
@@ -386,15 +382,13 @@ def main():
 
             stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_after,
                                              axis=0, nan_policy='omit')
-            # stats, p = t_test_for_deppendent_smaples(p_edge_run_after, p_edge_after)
             p_value[mouse_name]['p_after'].extend([p])
             sign_p[mouse_name]['sign_after'].extend([np.sign(stats)])
 
             stats, p = scipy.stats.ttest_rel(p_edge_run_before,
                                              p_edge_run_after, axis=0,
                                              nan_policy='omit')
-            # stats, p = t_test_for_deppendent_smaples(p_edge_run_before,
-            # p_edge_run_after)
+
             p_value[mouse_name]['p_before_after'].extend([p])
             sign_p[mouse_name]['sign_before_after'].extend([np.sign(stats)])
 
