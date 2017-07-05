@@ -12,7 +12,7 @@ EDGE_BINS = [0, 1, 10, 11]
 FRAME_RATE = 20 #Hz
 MOUSE = [4, 4, 1, 1]
 CAGE = [6, 7, 11, 13]
-ENV = 'envB'
+ENV = 'envA'
 DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 VELOCITY_THRESHOLD = 5
@@ -320,6 +320,7 @@ def normalize_trace_segment(trace_segment):
 def main():
     p_value = {}
     sign_p = {}
+    cohen_d = {}
     summary_figure = figure()
 
     mouse_color = ['r', 'b', 'c', 'k']
@@ -331,6 +332,9 @@ def main():
         sign_p[mouse_name] = {'sign_before': [],
                                'sign_after': [],
                                'sign_before_after': []}
+        cohen_d[mouse_name] = {'d_before': [],
+                               'd_after': [],
+                               'd_before_after': []}
 
         for day in DAYS:
             print CAGE[i], mouse, day
@@ -358,9 +362,13 @@ def main():
             stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_non_run_before,
                                              axis=0, nan_policy='omit')
 
+            d = (np.nanmean(p_edge_run_before) - np.nanmean(p_edge_non_run_before)) /\
+                (np.sqrt((np.nanstd(p_edge_run_before) ** 2 +
+                          np.nanstd(p_edge_non_run_before) ** 2) / 2))
+
             p_value[mouse_name]['p_before'].extend([p])
             sign_p[mouse_name]['sign_before'].extend([np.sign(stats)])
-
+            cohen_d[mouse_name]['d_before'].extend([d])
 
             events_segments_after = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
@@ -381,8 +389,14 @@ def main():
 
             stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_non_run_after,
                                              axis=0, nan_policy='omit')
+
+            d = (np.nanmean(p_edge_run_after) - np.nanmean(p_edge_non_run_after)) / \
+                (np.sqrt((np.nanstd(p_edge_run_after) ** 2 +
+                          np.nanstd(p_edge_non_run_after) ** 2) / 2))
+
             p_value[mouse_name]['p_after'].extend([p])
             sign_p[mouse_name]['sign_after'].extend([np.sign(stats)])
+            cohen_d[mouse_name]['d_after'].extend([d])
 
             stats, p = scipy.stats.ttest_rel(p_edge_run_before,
                                              p_edge_run_after, axis=0,
@@ -391,27 +405,23 @@ def main():
             p_value[mouse_name]['p_before_after'].extend([p])
             sign_p[mouse_name]['sign_before_after'].extend([np.sign(stats)])
 
-        plot(np.array(p_value[mouse_name]['p_before']) * np.array(
-            sign_p[mouse_name]['sign_before']),
-             np.array(p_value[mouse_name]['p_after']) * np.array(
-                 sign_p[mouse_name]['sign_after']),
+        plot(np.array(cohen_d[mouse_name]['d_before']),
+             np.array(cohen_d[mouse_name]['d_after']),
              markerfacecolor=mouse_color[i], marker='o', linestyle='None')
 
-    plot(np.arange(0, 1.1, 0.1), np.ones(11) * 0.05, 'r')
-    plot(np.arange(-1.1, 1.1, 0.1), np.zeros(22), 'k')
-    plot(np.arange(-1.1, 0, 0.1), np.ones(11) * (-0.05), 'b')
-    plot(np.ones(11) * 0.05, np.arange(0, 1.1, 0.1), 'r')
-    plot(np.zeros(22), np.arange(-1.1, 1.1, 0.1), 'k')
-    plot(np.ones(11) * (-0.05), np.arange(-1.1, 0, 0.1), 'b')
-
+    plot(np.ones(20)*-0.4, np.arange(-1, 1, 0.1), 'r')
+    plot(np.arange(-1, 1, 0.1), np.ones(20)*-0.4, 'r')
+    plot(np.ones(20) * 0.4, np.arange(-1, 1, 0.1), 'r')
+    plot(np.arange(-1, 1, 0.1), np.ones(20) * 0.4, 'r')
+    plot(np.zeros(20), np.arange(-1, 1, 0.1), 'k')
+    plot(np.arange(-1, 1, 0.1), np.zeros(20), 'k')
     ylabel(
-        'P value of: p(active after run|active in run) - p(active after run)')
+        'Effect size of: p(active after run|active in run) - p(active after run|not active in run)')
     xlabel(
-        'P value of: p(active before run|active in run) - p(active before run)')
-    ylim((-1.1, 1.1))
-    xlim((-1.1, 1.1))
+        'Effect size of: p(active before run|active in run) - p(active before run|not active in run)')
     title(
-        'P values of conditional probability in edges given run Vs not in run')
+        'Effect size of conditional probability in edges given run Vs not in run\n'
+        'Environment %s' % ENV[-1])
     summary_figure.show()
 
     raw_input('press enter to quit')
