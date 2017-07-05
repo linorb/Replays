@@ -12,7 +12,7 @@ EDGE_BINS = [0, 1, 10, 11]
 FRAME_RATE = 20 #Hz
 MOUSE = [4, 4, 1, 1]
 CAGE = [6, 7, 11, 13]
-ENV = 'envA'
+ENV = 'envB'
 DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 VELOCITY_THRESHOLD = 5
@@ -96,8 +96,11 @@ def calculate_conditional_activity_probability(events_segments):
 
     # Calculating the conditional probability
     edge_run_activity = run_activity*edge_activity
+    edge_non_run_activity = ~run_activity*edge_activity
     number_of_active_runs = np.sum(run_activity, axis=1)
+    number_of_non_active_runs = np.sum(~run_activity, axis=1)
     p_edge_run = np.sum(edge_run_activity, axis=1)/np.float32(number_of_active_runs)
+    p_edge_non_run = np.sum(edge_non_run_activity, axis=1)/np.float32(number_of_non_active_runs)
     p_edge = np.sum(edge_activity, axis=1)/np.float32(edge_activity.shape[1])
 
     # f1, axx = subplots(2, 1, sharey=True, sharex=True)
@@ -109,7 +112,7 @@ def calculate_conditional_activity_probability(events_segments):
     # f1.show()
     # raw_input('press enter')
 
-    return p_edge_run, p_edge
+    return p_edge_run, p_edge_non_run, p_edge
 
 def create_segments_for_run_epochs_and_edges_entire_session(activity,
                                                             movement_data,
@@ -315,15 +318,11 @@ def normalize_trace_segment(trace_segment):
     return normalize_segment
 
 def main():
-    # p_edge_run_before_all = []
-    # p_edge_before_all = []
-    # p_edge_run_after_all = []
-    # p_edge_after_all = []
-
     p_value = {}
     sign_p = {}
-    summary_figure, sum_ax = subplots(2, 3, sharex=True, sharey=True)
+    summary_figure = figure()
 
+    mouse_color = ['r', 'b', 'c', 'k']
     for i, mouse in enumerate(MOUSE):
         mouse_name = 'c%dm%d' %(CAGE[i], mouse)
         p_value[mouse_name] = {'p_before': [],
@@ -353,10 +352,10 @@ def main():
             #                                traces_segments_before,
             #                                10)
 
-            p_edge_run_before, p_edge_before = \
+            p_edge_run_before, p_edge_non_run_before, _ = \
                 calculate_conditional_activity_probability(events_segments_before)
 
-            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_before,
+            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_non_run_before,
                                              axis=0, nan_policy='omit')
 
             p_value[mouse_name]['p_before'].extend([p])
@@ -377,10 +376,10 @@ def main():
             #                                traces_segments_after,
             #                                10)
 
-            p_edge_run_after, p_edge_after = \
+            p_edge_run_after, p_edge_non_run_after, _ = \
                 calculate_conditional_activity_probability(events_segments_after)
 
-            stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_after,
+            stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_non_run_after,
                                              axis=0, nan_policy='omit')
             p_value[mouse_name]['p_after'].extend([p])
             sign_p[mouse_name]['sign_after'].extend([np.sign(stats)])
@@ -392,41 +391,28 @@ def main():
             p_value[mouse_name]['p_before_after'].extend([p])
             sign_p[mouse_name]['sign_before_after'].extend([np.sign(stats)])
 
-            # p_edge_run_after_all.extend(p_edge_run_after)
-            # p_edge_after_all.extend(p_edge_after)
+        plot(np.array(p_value[mouse_name]['p_before']) * np.array(
+            sign_p[mouse_name]['sign_before']),
+             np.array(p_value[mouse_name]['p_after']) * np.array(
+                 sign_p[mouse_name]['sign_after']),
+             markerfacecolor=mouse_color[i], marker='o', linestyle='None')
 
-        f, axx = subplots(2, 3, sharex=True)
-        axx[0, 0].bar(range(7), p_value[mouse_name]['p_before'])
-        axx[0, 0].set_title('p(active before run|active in run) - '
-                            'p(active before run)', size=20)
-        axx[0, 0].set_ylabel('P value', fontsize=20)
-        axx[0, 0].plot(range(7), [0.05]*7, color='red')
-        axx[1, 0].bar(range(7), sign_p[mouse_name]['sign_before'])
-        axx[1, 0].set_ylabel('sign', fontsize=20)
-        axx[1, 0].set_xlabel('#session', fontsize=20)
+    plot(np.arange(0, 1.1, 0.1), np.ones(11) * 0.05, 'r')
+    plot(np.arange(-1.1, 1.1, 0.1), np.zeros(22), 'k')
+    plot(np.arange(-1.1, 0, 0.1), np.ones(11) * (-0.05), 'b')
+    plot(np.ones(11) * 0.05, np.arange(0, 1.1, 0.1), 'r')
+    plot(np.zeros(22), np.arange(-1.1, 1.1, 0.1), 'k')
+    plot(np.ones(11) * (-0.05), np.arange(-1.1, 0, 0.1), 'b')
 
-        axx[0, 1].bar(range(7), p_value[mouse_name]['p_after'])
-        axx[0, 1].set_title('p(active after run|active in run) - '
-                            'p(active after run)', size=20)
-        axx[0, 1].set_ylabel('P value', fontsize=20)
-        axx[0, 1].plot(range(7), [0.05] * 7, color='red')
-        axx[1, 1].bar(range(7), sign_p[mouse_name]['sign_after'])
-        axx[1, 1].set_ylabel('sign', fontsize=20)
-        axx[1, 1].set_xlabel('#session', fontsize=20)
-
-        axx[0, 2].bar(range(7), p_value[mouse_name]['p_before_after'])
-        axx[0, 2].set_title('p(active before run|active in run) - '
-                            'p(active after run|active in run)', size=20)
-        axx[0, 2].set_ylabel('P value', fontsize=20)
-        axx[0, 2].plot(range(7), [0.05] * 7, color='red')
-        axx[1, 2].bar(range(7), sign_p[mouse_name]['sign_before_after'])
-        axx[1, 2].set_ylabel('sign', fontsize=20)
-        axx[1, 2].set_xlabel('#session', fontsize=20)
-
-        f.suptitle('C%sM%s %s T test paired samples' %(CAGE[i], mouse, ENV),
-                   fontsize=25)
-        # f.set_title('t-test for paired samples')
-        f.show()
+    ylabel(
+        'P value of: p(active after run|active in run) - p(active after run)')
+    xlabel(
+        'P value of: p(active before run|active in run) - p(active before run)')
+    ylim((-1.1, 1.1))
+    xlim((-1.1, 1.1))
+    title(
+        'P values of conditional probability in edges given run Vs not in run')
+    summary_figure.show()
 
     raw_input('press enter to quit')
 
