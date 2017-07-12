@@ -17,10 +17,12 @@ EDGE_BINS = [0, 1, 10, 11]
 # WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 VELOCITY_THRESHOLD = 5
 FRAME_RATE = 10 #Hz
-MOUSE = [3, 6, 6, 4, 3, 0]
-CAGE = [40, 40, 38, 38, 38, 38]
-ENV = 'linear'
-WORK_DIR = r'D:\dev\replays\work_data\recall'
+MOUSE = [3, 6, 6, 4, 3, 0, 4, 4, 1, 1]
+CAGE = [40, 40, 38, 38, 38, 38, 6, 7, 11, 13]
+ENV = [r'\linear']*6
+ENV.extend([r'\envA']*4)
+WORK_DIR = [r'D:\dev\replays\work_data\recall']*6
+WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
 
 def load_session_data(session_dir):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -323,28 +325,26 @@ def normalize_trace_segment(trace_segment):
 
 def main():
     p_value = {}
-    sign_p = {}
+    t_value = {}
     cohen_d = {}
-    summary_figure = figure()
 
-    mouse_color = ['r', 'b', 'c', 'k', 'm', 'y']
     for i, mouse in enumerate(MOUSE):
         mouse_name = 'c%dm%d' %(CAGE[i], mouse)
         p_value[mouse_name] = {'p_before': [],
                                'p_after': [],
                                'p_before_after': []}
-        sign_p[mouse_name] = {'sign_before': [],
-                               'sign_after': [],
-                               'sign_before_after': []}
+        t_value[mouse_name] = {'t_before': [],
+                               't_after': [],
+                               't_before_after': []}
         cohen_d[mouse_name] = {'d_before': [],
                                'd_after': [],
                                'd_before_after': []}
-        mouse_dir = WORK_DIR + '\c%dm%d' %(CAGE[i], mouse)
+        mouse_dir = WORK_DIR[i] + '\c%dm%d' %(CAGE[i], mouse)
         days_list = [x[1] for x in os.walk(mouse_dir)][0]
         for day in days_list:
             print CAGE[i], mouse, day
             print
-            session_dir = mouse_dir + '\%s\%s' %(day, ENV)
+            session_dir = mouse_dir + '\%s\%s' %(day, ENV[i])
             events, traces, movement_data, _, _ = load_session_data(session_dir)
             events_segments_before = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
@@ -372,7 +372,7 @@ def main():
                           np.nanstd(p_edge_non_run_before) ** 2) / 2))
 
             p_value[mouse_name]['p_before'].extend([p])
-            sign_p[mouse_name]['sign_before'].extend([np.sign(stats)])
+            t_value[mouse_name]['t_before'].extend([np.sign(stats)])
             cohen_d[mouse_name]['d_before'].extend([d])
 
             events_segments_after = \
@@ -400,34 +400,23 @@ def main():
                           np.nanstd(p_edge_non_run_after) ** 2) / 2))
 
             p_value[mouse_name]['p_after'].extend([p])
-            sign_p[mouse_name]['sign_after'].extend([np.sign(stats)])
+            t_value[mouse_name]['t_after'].extend([np.sign(stats)])
             cohen_d[mouse_name]['d_after'].extend([d])
 
             stats, p = scipy.stats.ttest_rel(p_edge_run_before,
                                              p_edge_run_after, axis=0,
                                              nan_policy='omit')
+            d = (np.nanmean(p_edge_run_before) - np.nanmean(
+                p_edge_run_after)) / \
+                (np.sqrt((np.nanstd(p_edge_run_after) ** 2 +
+                          np.nanstd(p_edge_run_before) ** 2) / 2))
 
             p_value[mouse_name]['p_before_after'].extend([p])
-            sign_p[mouse_name]['sign_before_after'].extend([np.sign(stats)])
+            t_value[mouse_name]['t_before_after'].extend([np.sign(stats)])
+            cohen_d[mouse_name]['d_before_after'].extend([d])
 
-        plot(np.array(cohen_d[mouse_name]['d_before']),
-             np.array(cohen_d[mouse_name]['d_after']),
-             markerfacecolor=mouse_color[i], marker='o', linestyle='None')
-
-    plot(np.ones(20)*-0.4, np.arange(-1, 1, 0.1), 'r')
-    plot(np.arange(-1, 1, 0.1), np.ones(20)*-0.4, 'r')
-    plot(np.ones(20) * 0.4, np.arange(-1, 1, 0.1), 'r')
-    plot(np.arange(-1, 1, 0.1), np.ones(20) * 0.4, 'r')
-    plot(np.zeros(20), np.arange(-1, 1, 0.1), 'k')
-    plot(np.arange(-1, 1, 0.1), np.zeros(20), 'k')
-    ylabel(
-        'Effect size of: p(active after run|active in run) - p(active after run|not active in run)')
-    xlabel(
-        'Effect size of: p(active before run|active in run) - p(active before run|not active in run)')
-    title(
-        'Effect size of conditional probability in edges given run Vs not in run\n'
-        'Environment %s' % ENV[-1])
-    summary_figure.show()
+    np.savez('linear_edge_statistics', p_value=p_value, t_value=t_value,
+             cohen_d=cohen_d)
 
     raw_input('press enter to quit')
 
