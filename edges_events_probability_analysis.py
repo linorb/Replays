@@ -9,13 +9,18 @@ from bambi.analysis.maximum_likelihood import *
 from zivlab.analysis.place_cells import find_place_cells
 
 EDGE_BINS = [0, 1, 10, 11]
-FRAME_RATE = 20 #Hz
-MOUSE = [4, 4, 1, 1]
-CAGE = [6, 7, 11, 13]
-ENV = 'envA'
-DAYS = '1234567'
-WORK_DIR = r'D:\dev\replays\work_data\two_environments'
+# FRAME_RATE = 20 #Hz
+# MOUSE = [4, 4, 1]
+# CAGE = [6, 7, 11, 13]
+# ENV = 'envA'
+# DAYS = '1234567'
+# WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 VELOCITY_THRESHOLD = 5
+FRAME_RATE = 10 #Hz
+MOUSE = [3, 6, 6, 4, 3, 0]
+CAGE = [40, 40, 38, 38, 38, 38]
+ENV = 'linear'
+WORK_DIR = r'D:\dev\replays\work_data\recall'
 
 def load_session_data(session_dir):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -63,7 +68,6 @@ def load_session_data(session_dir):
     traces = order_events_into_trials(all_traces, frame_log)
 
     return events, traces, movement_data, place_cells, p_r_s
-
 
 def calculate_conditional_activity_probability(events_segments):
     # Calculate conditional probability for events in segments of activity.
@@ -323,7 +327,7 @@ def main():
     cohen_d = {}
     summary_figure = figure()
 
-    mouse_color = ['r', 'b', 'c', 'k']
+    mouse_color = ['r', 'b', 'c', 'k', 'm', 'y']
     for i, mouse in enumerate(MOUSE):
         mouse_name = 'c%dm%d' %(CAGE[i], mouse)
         p_value[mouse_name] = {'p_before': [],
@@ -335,11 +339,12 @@ def main():
         cohen_d[mouse_name] = {'d_before': [],
                                'd_after': [],
                                'd_before_after': []}
-
-        for day in DAYS:
+        mouse_dir = WORK_DIR + '\c%dm%d' %(CAGE[i], mouse)
+        days_list = [x[1] for x in os.walk(mouse_dir)][0]
+        for day in days_list:
             print CAGE[i], mouse, day
             print
-            session_dir = WORK_DIR + '\c%dm%d\day%s\%s' %(CAGE[i], mouse, day, ENV)
+            session_dir = mouse_dir + '\%s\%s' %(day, ENV)
             events, traces, movement_data, _, _ = load_session_data(session_dir)
             events_segments_before = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
