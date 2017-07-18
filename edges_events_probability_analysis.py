@@ -9,20 +9,25 @@ from bambi.analysis.maximum_likelihood import *
 from zivlab.analysis.place_cells import find_place_cells
 
 EDGE_BINS = [0, 1, 10, 11]
-# FRAME_RATE = 20 #Hz
-# MOUSE = [4, 4, 1]
-# CAGE = [6, 7, 11, 13]
-# ENV = 'envA'
-# DAYS = '1234567'
-# WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 VELOCITY_THRESHOLD = 5
-FRAME_RATE = 10 #Hz
-MOUSE = [3, 6, 6, 4, 3, 0, 4, 4, 1, 1]
-CAGE = [40, 40, 38, 38, 38, 38, 6, 7, 11, 13]
-ENV = [r'\linear']*6
-ENV.extend([r'\envA']*4)
-WORK_DIR = [r'D:\dev\replays\work_data\recall']*6
-WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
+
+# Linear track parameters
+# FRAME_RATE = [10]*6 #Hz
+# FRAME_RATE.extend([20]*4)
+# MOUSE = [3, 6, 6, 4, 3, 0, 4, 4, 1, 1]
+# CAGE = [40, 40, 38, 38, 38, 38, 6, 7, 11, 13]
+# ENV = [r'\linear']*6
+# ENV.extend([r'\envA']*4)
+# WORK_DIR = [r'D:\dev\replays\work_data\recall']*6
+# WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
+
+# L shape parameters
+FRAME_RATE = [20]*4 #Hz
+MOUSE = [4, 4, 1, 1]
+CAGE = [6, 7, 11, 13]
+ENV= [r'\envB']*4
+WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
+
 
 def load_session_data(session_dir):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -124,7 +129,8 @@ def create_segments_for_run_epochs_and_edges_entire_session(activity,
                                                             movement_data,
                                                             segment_type,
                                                             seconds_range,
-                                                            edge_bins):
+                                                            edge_bins,
+                                                            frame_rate):
     # Create segments for using in calculate_conditional_activity_probability
     #  afterwards that divide the session to run epochs and the activity that
     #  is done in the edges before/after the run.
@@ -149,7 +155,7 @@ def create_segments_for_run_epochs_and_edges_entire_session(activity,
         trial_segments = create_segments_for_run_epochs_and_edges_for_trial\
                                                     (trial_events, bins,
                                                     segment_type, seconds_range,
-                                                    edge_bins)
+                                                    edge_bins, frame_rate)
         session_segments.extend(trial_segments)
 
     return session_segments
@@ -159,7 +165,8 @@ def create_segments_for_run_epochs_and_edges_entire_session(activity,
 def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
                                                        segment_type,
                                                        seconds_range,
-                                                       edge_bins):
+                                                       edge_bins,
+                                                       frame_rate):
     # Create segments for one trial.
     # Args:
     #   events: A matrix of events\traces. size [#neurons, #frames]
@@ -196,7 +203,7 @@ def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
         segment = []
         edge_segment = events[:, edge_locations[i]]
         if seconds_range:
-            frames_indices = np.array(seconds_range) * FRAME_RATE
+            frames_indices = np.array(seconds_range) * frame_rate
             try:
                 if segment_type == 'before':
                     if frames_indices[0]>0:
@@ -350,13 +357,15 @@ def main():
                 create_segments_for_run_epochs_and_edges_entire_session(events,
                                                             movement_data,
                                                             'before', [0, 2],
-                                                            EDGE_BINS)
+                                                            EDGE_BINS,
+                                                            FRAME_RATE[i])
 
             traces_segments_before = \
                 create_segments_for_run_epochs_and_edges_entire_session(traces,
                                                             movement_data,
                                                             'before', [0, 2],
-                                                            EDGE_BINS)
+                                                            EDGE_BINS,
+                                                            FRAME_RATE[i])
             # plot_random_segment_activities(events_segments_before,
             #                                traces_segments_before,
             #                                10)
@@ -372,19 +381,21 @@ def main():
                           np.nanstd(p_edge_non_run_before) ** 2) / 2))
 
             p_value[mouse_name]['p_before'].extend([p])
-            t_value[mouse_name]['t_before'].extend([np.sign(stats)])
+            t_value[mouse_name]['t_before'].extend([stats])
             cohen_d[mouse_name]['d_before'].extend([d])
 
             events_segments_after = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
                                                                 movement_data,
                                                                 'after', [2, 4],
-                                                                EDGE_BINS)
+                                                                EDGE_BINS,
+                                                                FRAME_RATE[i])
             traces_segments_after = \
                 create_segments_for_run_epochs_and_edges_entire_session(traces,
                                                                 movement_data,
                                                                 'after', [2, 4],
-                                                                EDGE_BINS)
+                                                                EDGE_BINS,
+                                                                FRAME_RATE[i])
             # plot_random_segment_activities(events_segments_after,
             #                                traces_segments_after,
             #                                10)
@@ -400,7 +411,7 @@ def main():
                           np.nanstd(p_edge_non_run_after) ** 2) / 2))
 
             p_value[mouse_name]['p_after'].extend([p])
-            t_value[mouse_name]['t_after'].extend([np.sign(stats)])
+            t_value[mouse_name]['t_after'].extend([stats])
             cohen_d[mouse_name]['d_after'].extend([d])
 
             stats, p = scipy.stats.ttest_rel(p_edge_run_before,
@@ -412,10 +423,10 @@ def main():
                           np.nanstd(p_edge_run_before) ** 2) / 2))
 
             p_value[mouse_name]['p_before_after'].extend([p])
-            t_value[mouse_name]['t_before_after'].extend([np.sign(stats)])
+            t_value[mouse_name]['t_before_after'].extend([stats])
             cohen_d[mouse_name]['d_before_after'].extend([d])
 
-    np.savez('linear_edge_statistics', p_value=p_value, t_value=t_value,
+    np.savez('L-shape_edge_statistics', p_value=p_value, t_value=t_value,
              cohen_d=cohen_d)
 
     raw_input('press enter to quit')
