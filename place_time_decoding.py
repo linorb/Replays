@@ -60,63 +60,6 @@ def count_edge_bins(bins, edge_bins):
 
     return number_of_edge_bins, edge_bins_mask
 
-def test_bucket_trial(events, p_neuron_bin, edge_bins):
-    # Decode by using maximum-likelihood decoder for two environments a bucket trial
-    # and return the decoding results, parentage of decoding from each environment,
-    # and the division to edge bins and rest of track
-    number_of_frames = events.shape[1]
-
-    decoded_bins = np.zeros((number_of_frames))
-    decoded_env = np.zeros((number_of_frames))
-
-    # Decode each frame in events:
-    for frame in range(number_of_frames):
-        if np.sum(events[:, frame]) > 0:
-            decoded_bins[frame], environment_name = decode_most_likely_bin_and_environment(
-                                                    np.expand_dims(events[:, frame], axis=1), p_neuron_bin)
-            if 'envA' in environment_name:
-                decoded_env[frame] = 0
-            elif 'envB' in environment_name:
-                decoded_env[frame] = 1
-            elif 'bucketA' in environment_name:
-                decoded_env[frame] = 2
-            elif 'bucketB' in environment_name:
-                decoded_env[frame] = 3
-        else:
-            decoded_bins[frame] = np.nan
-            decoded_env[frame] = np.nan
-
-    #Calculate environment statistics:
-    statistics = {'envA': {'overall_decoding_fraction': [],
-                           'edge_decoding_fraction': []},
-                  'envB': {'overall_decoding_fraction': [],
-                           'edge_decoding_fraction': []},
-                  'bucketA': {'overall_decoding_fraction': []},
-                  'bucketB': {'overall_decoding_fraction': []}
-                  }
-    decoded_env = decoded_env[~np.isnan(decoded_env)]
-    decoded_bins = decoded_bins[~np.isnan(decoded_bins)]
-    statistics['envA']['overall_decoding_fraction'] = sum(
-        decoded_env == 0)/np.float32(len(decoded_env))
-    statistics['envB']['overall_decoding_fraction'] = sum(
-        decoded_env == 1) / np.float32(len(decoded_env))
-    statistics['bucketA']['overall_decoding_fraction'] = sum(
-        decoded_env == 2) / np.float32(len(decoded_env))
-    statistics['bucketB']['overall_decoding_fraction'] = sum(
-        decoded_env == 3) / np.float32(len(decoded_env))
-
-    number_of_edge_binsA, _ = count_edge_bins(decoded_bins[decoded_env == 0],
-                                              edge_bins)
-    statistics['envA']['edge_decoding_fraction'] = \
-        number_of_edge_binsA/np.float32(len(decoded_bins[decoded_env == 0]))
-
-    number_of_edge_binsB, _ = count_edge_bins(decoded_bins[decoded_env == 1],
-                                              edge_bins)
-    statistics['envB']['edge_decoding_fraction'] = \
-        number_of_edge_binsB/np.float32(len(decoded_bins[decoded_env == 1]))
-
-    return statistics, decoded_bins, decoded_env
-
 def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin, edge_bins,
                                                correct_decoding_percentage,
                                          number_of_permutations, environment):
@@ -137,60 +80,6 @@ def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin, edge_bins,
         sum(edge_fraction > correct_decoding_percentage['edge_decoding_fraction'])/np.float32(number_of_permutations)
 
     return p_val
-
-def plot_two_env_histogram(decoded_bins, decoded_env, correct_env_name):
-    env_A_mask = decoded_env == 0
-    env_B_mask = decoded_env == 1
-
-    f, axx = subplots(1, 2, sharex=True, sharey=True)
-    axx[0].hist(decoded_bins[env_A_mask], bins=11)
-    axx[0].set_title('Histogram of bins environment A')
-    axx[0].set_xlabel('bins')
-    axx[0].set_ylabel('number of frames')
-
-    axx[1].hist(decoded_bins[env_B_mask], bins=11)
-    axx[1].set_title('Histogram of bins environment B')
-    axx[1].set_xlabel('bins')
-    axx[1].set_ylabel('number of frames')
-
-    f.suptitle('Correct environment:%s' %correct_env_name)
-
-    f.show()
-
-    return
-
-def plot_decoded_bins(decoded_bins, decoded_env, correct_env_name):
-    envA_bins = np.zeros_like(decoded_bins)
-    envA_bins[:] = np.nan
-    envB_bins = np.zeros_like(decoded_bins)
-    envB_bins[:] = np.nan
-    envA_bins[decoded_env == 0] = decoded_bins[decoded_env == 0]
-    envB_bins[decoded_env == 1] = decoded_bins[decoded_env == 1]
-
-    bucketA_bins = np.zeros_like(decoded_bins)
-    bucketA_bins[:] = np.nan
-    bucketB_bins = np.zeros_like(decoded_bins)
-    bucketB_bins[:] = np.nan
-    bucketA_bins[decoded_env == 2] = decoded_bins[decoded_env == 2]
-    bucketB_bins[decoded_env == 3] = decoded_bins[decoded_env == 3]
-
-    f, axx = subplots(4, 2, sharex='col', sharey='col')
-    axx[0, 0].plot(envA_bins, '*')
-    axx[0, 0].set_title('Decoded bins in environment A')
-    axx[1, 0].plot(envB_bins, '*')
-    axx[1, 0].set_title('Decoded bins in environment B')
-    axx[2, 0].plot(bucketA_bins, '*')
-    axx[2, 0].set_title('Decoded bins in bucket A')
-    axx[3, 0].plot(bucketB_bins, '*')
-    axx[3, 0].set_title('Decoded bins in bucket B')
-
-    axx[1, 0].set_ylim((-0.1, 12))
-    setp(axx[:, 0], xlabel='#frame', ylabel='#bin')
-
-    edges = [0, 1, 2, 3, 4]
-    axx[2, 1].hist(decoded_env[~np.isnan(decoded_env)], bins=edges, normed=True)
-    axx[2, 1].set_title('probability for environment decoding')
-    f.suptitle('Correct environment:%s' %(correct_env_name))
 
     f.show()
 
