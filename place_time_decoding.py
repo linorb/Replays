@@ -152,7 +152,7 @@ def main():
 
             # load the session data
             session_dir = mouse_dir + '\%s\%s' %(day, ENV[i])
-            session_ind = int(day[-1])
+            session_ind = int(day[-1])-1
             events_traces, movement_data = \
                 load_session_data(session_dir, cell_registration, session_ind)
 
