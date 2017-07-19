@@ -8,8 +8,8 @@ import matplotlib.gridspec as gridspec
 
 from edges_events_probability_analysis import \
     create_segments_for_run_epochs_and_edges_entire_session,\
-    load_session_data, calculate_conditional_activity_probability,\
-    EDGE_BINS, MOUSE, CAGE, ENV, WORK_DIR
+    load_session_data,\
+    EDGE_BINS, MOUSE, CAGE, ENV, WORK_DIR, FRAME_RATE
 
 WINDOW = 0.2 #sec
 FRAMES_PER_SECOND = 20
@@ -232,7 +232,8 @@ def main():
                 create_segments_for_run_epochs_and_edges_entire_session(events,
                                                             movement_data,
                                                             'before', [],
-                                                            EDGE_BINS)
+                                                            EDGE_BINS,
+                                                            FRAME_RATE[i])
 
             # Find SCE and the neurons that participate in it
             concatenated_edge_segments = \
