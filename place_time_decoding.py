@@ -36,7 +36,7 @@ MIN_NUMBER_OF_EVENTS = 15
 
 def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
-    events_filename = 'finalEventsMat.mat'
+    events_filename = 'fixedEventsMat.mat'
     log_filename = 'frameLog.csv'
     behavior_filename = 'my_mvmt.mat'
 
