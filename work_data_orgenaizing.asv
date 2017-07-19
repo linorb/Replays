@@ -58,7 +58,7 @@ for mouse_ind=1:number_of_mice
         number_of_frames = cellActivity{1,1}.numFrames;
         events = cell(1,length(number_of_frames));
         number_of_neurons = size(cellActivity{1,1}.Events, 2);
-        allEventsMat = [];
+        all_events = []
         for trial_ind=1:length(number_of_frames)
             events{trial_ind} = zeros(number_of_neurons, ...
                 number_of_frames(trial_ind));
@@ -70,15 +70,13 @@ for mouse_ind=1:number_of_mice
                     % Setting 1 value from the rise time of the event
                     end_frame = neuron_activity(1, event_ind);
                     begin_frame = end_frame - neuron_activity(3, event_ind);
-                    if begin_frame>1
-                        events{trial_ind}(neuron_ind, begin_frame:end_frame) = 1;             
-                    end                   
+                    events{trial_ind}(neuron_ind, begin_frame:end_frame) = 1;
                 end
             end
-            allEventsMat = [allEventsMat, events{trial_ind}];
+            all_events = [all_events, events{trial_ind}];
         end
-        allEventsMat = allEventsMat';
-        save([full_path,'\FixedEventsMat.mat'], 'allEventsMat');
+        waitforbuttonpress;
+        save([full_path,'\FixedEventsMat.mat'], all_events);
     end
 end
             

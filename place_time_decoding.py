@@ -9,28 +9,30 @@ from bambi.analysis import maximum_likelihood
 from zivlab.analysis.place_cells import find_place_cells
 
 # Linear track parameters
-# FRAME_RATE = [10]*6 #Hz
-# FRAME_RATE.extend([20]*4)
-# MOUSE = [3, 6, 6, 4, 3, 0, 4, 4, 1, 1]
-# CAGE = [40, 40, 38, 38, 38, 38, 6, 7, 11, 13]
-# ENV = [r'\linear']*6
-# ENV.extend([r'\envA']*4)
-# WORK_DIR = [r'D:\dev\replays\work_data\recall']*6
-# WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
+FRAME_RATE = [20]*4
+FRAME_RATE.extend([10]*6) #Hz
+MOUSE = [4, 4, 1, 1, 6, 3, 6, 3, 0]
+CAGE = [7, 6, 11, 13, 40, 40, 38, 38, 38]
+ENV = [r'\envA']*4
+ENV.extend([r'\linear']*6)
+WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
+WORK_DIR.extend([r'D:\dev\replays\work_data\recall']*6)
+
 
 # L-shape track parameters
-FRAME_RATE = [20]*4 #Hz
-MOUSE = [4, 4, 1, 1]
-CAGE = [6, 7, 11, 13]
-ENV= [r'\envB']*4
-WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
+# FRAME_RATE = [20]*4 #Hz
+# MOUSE = [4, 4, 1, 1]
+# CAGE = [6, 7, 11, 13]
+# ENV= [r'\envB']*4
+# WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
 
 EDGE_BINS = [0, 1, 10, 11]
-VELOCITY_THRESHOLD = 1
+VELOCITY_THRESHOLD = 5
 NUMBER_OF_BINS = 24
 SPACE_BINNING = 2
 NUMBER_OF_PERMUTATIONS = 1
 FRAMES_TO_LOOK_BACK = 15
+MIN_NUMBER_OF_EVENTS = 15
 
 def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -280,10 +282,12 @@ def main():
             velocity_positive = velocity > VELOCITY_THRESHOLD
             velocity_negative = velocity < -VELOCITY_THRESHOLD
             place_cells_positive, _, _ = find_place_cells\
-                (bins[velocity_positive], events[:, velocity_positive])
+                (bins[velocity_positive], events[:, velocity_positive],
+                 min_number_of_events=MIN_NUMBER_OF_EVENTS)
 
             place_cells_negative, _, _ = find_place_cells\
-                (bins[velocity_negative], events[:, velocity_negative])
+                (bins[velocity_negative], events[:, velocity_negative],
+                 min_number_of_events=MIN_NUMBER_OF_EVENTS)
 
             place_cells = np.concatenate\
                 ([place_cells_positive, place_cells_negative])
@@ -309,6 +313,7 @@ def main():
             p_neuron_bin = create_p_neuron_bin(train_movement_data,
                                                train_events_traces,
                                                linear_trials_indices)
+
             number_of_days = len(days_list)
             for test_session_ind in np.arange(train_session_ind, number_of_days):
                 print 'testing on data set for', CAGE[i], mouse, days_list[test_session_ind]
