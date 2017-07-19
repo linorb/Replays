@@ -81,6 +81,12 @@ def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin, edge_bins,
 
     return p_val
 
+def plot_decoded_bins(decoded_bins, real_bins, session_details):
+    f = figure()
+    line1, = plot(real_bins, 'b', label='actual behavior')
+    line2, = plot(decoded_bins, 'r', label='decoded behavior')
+    legend(handles=[line1, line2])
+    title('Decoder performance' + session_details)
     f.show()
 
     return
@@ -120,19 +126,19 @@ def create_p_neuron_bin(movement_data, events_traces,
 
     return p_neuron_bin
 
-def plot_median_error(median_error, mouse_name):
+def plot_mean_error(mean_error, mouse_name, path):
 
-    mean_of_median_error = [np.mean(np.array(x)) for x in median_error]
-    std_of_median_error = [np.std(np.array(x)) for x in median_error]
-    number_of_sessions = len(median_error)
+    mean_of_mean_error = [np.mean(np.array(x)) for x in mean_error]
+    std_of_mean_error = [np.std(np.array(x)) for x in mean_error]
+    number_of_sessions = len(mean_error)
 
     f = figure()
-    errorbar(range(number_of_sessions), mean_of_median_error, yerr=std_of_median_error)
-    ylabel('Median error')
+    errorbar(range(number_of_sessions), mean_of_mean_error, yerr=std_of_mean_error)
+    ylabel('Mean error')
     xlabel('Session interval')
-    title('Median error of maximum likelihood decoder\n' + mouse_name)
+    title('mean error of maximum likelihood decoder\n' + mouse_name)
     f.show()
-
+    savefig(path + r'\mean_error_decoder_' + mouse_name + '.pdf')
 
 def main():
 
@@ -188,7 +194,7 @@ def main():
         # Loop on all sessions, for train and test inside session and between
         # sessions
 
-        median_error_all_sessions = [[] for j,_ in enumerate(days_list)]
+        mean_error_all_sessions = [[] for j,_ in enumerate(days_list)]
         for train_session_ind, day in enumerate(days_list):
             print 'training on data set for', CAGE[i], mouse, day
             # Create p_neuron_bin with all session trials for testing with other
@@ -231,15 +237,23 @@ def main():
                              current_p_neuron_bin, FRAMES_TO_LOOK_BACK)
 
                         active_frames = np.sum(test_events, axis=0) > 0
-                        # calculating the median_error for the frames that had activity in,
+                        # calculating the mean_error for the frames that had activity in,
                         # since the frames that didn't have activity, get the
                         # estimation of the previous frame
-                        median_error_bins = np.median(test_bins[active_frames] -
+                        mean_error_bins = np.mean(np.abs((test_bins[active_frames] -
                                                     estimated_bins[
-                                                        active_frames])
-                        median_error_all_sessions \
+                                                        active_frames])))
+                        session_details = 'C%sM%s - train session: %d, ' \
+                                          'test session+trial: %d %d\n mean error: %d'\
+                                          %(CAGE[i], mouse, train_session_ind,
+                                            test_session_ind, test_trial, float(mean_error_bins))
+
+                        # plot_decoded_bins(estimated_bins, test_bins,
+                        #                   session_details)
+
+                        mean_error_all_sessions \
                             [np.abs(train_session_ind - test_session_ind)]. \
-                            append(median_error_bins)
+                            append(mean_error_bins)
                 # The case below is for different sessions for training and testing
                 else:
                     test_movement_data = mouse_movement[test_session_ind]
@@ -249,6 +263,24 @@ def main():
                                                    test_place_cells)
                     test_trials_indices = range(len(test_events_traces))[1:-1]
                     current_p_neuron_bin = [x[shared_place_cells, :] for x in p_neuron_bin]
+                    ###### debugging figures #######
+                    # f = figure()
+                    # max_bin = np.argmax(current_p_neuron_bin[1], axis=1)
+                    # sort_ind = np.argsort(max_bin)
+                    # imshow(current_p_neuron_bin[1][sort_ind, :],
+                    #        interpolation='none', aspect='auto')
+                    # f.show()
+                    # test_p_neuron_bin = create_p_neuron_bin(test_movement_data,
+                    #                                         test_events_traces,
+                    #                                         test_trials_indices)
+                    # current_test_p_neuron_bin = [x[shared_place_cells, :] for x
+                    #                              in test_p_neuron_bin]
+                    # f1 = figure()
+                    #
+                    # imshow(current_test_p_neuron_bin[1][sort_ind, :],
+                    #        interpolation='none', aspect='auto')
+                    # f1.show()
+                    ############
                     for test_trial in test_trials_indices:
                         [test_bins, test_events] = create_training_data(
                             test_movement_data, test_events_traces, [test_trial])
@@ -259,14 +291,25 @@ def main():
                              current_p_neuron_bin, FRAMES_TO_LOOK_BACK)
 
                         active_frames = np.sum(test_events, axis=0) > 0
-                        median_error_bins = np.median(test_bins[active_frames] -
-                                           estimated_bins[active_frames])
-                        median_error_all_sessions\
+                        mean_error_bins = np.mean(np.abs((test_bins[active_frames] -
+                                           estimated_bins[active_frames])))
+                        session_details = 'C%sM%s - train session: %d, ' \
+                                          'test session+trial: %d %d\n mean error: %f' \
+                                          % (CAGE[i], mouse, train_session_ind,
+                                             test_session_ind, test_trial,
+                                             float(mean_error_bins))
+
+                        # plot_decoded_bins(estimated_bins, test_bins,
+                        #                   session_details)
+
+                        mean_error_all_sessions\
                         [np.abs(train_session_ind - test_session_ind)].\
-                            append(median_error_bins)
+                            append(mean_error_bins)
 
-        plot_median_error(median_error_all_sessions, 'C%sM%s' % (CAGE[i], mouse))
+        path_fig = r'C:\Users\Administrator\Documents\Lab notebook\figures\19-7-17\time lapse decoder\linear'
+        plot_mean_error(mean_error_all_sessions, 'C%sM%s' % (CAGE[i], mouse), path_fig)
 
+        close("all")
 
 if __name__ == '__main__':
     main()
