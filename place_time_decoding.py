@@ -14,9 +14,9 @@ FRAME_RATE.extend([10]*6) #Hz
 MOUSE = [4, 4, 1, 1, 6, 3, 6, 3, 0]
 CAGE = [7, 6, 11, 13, 40, 40, 38, 38, 38]
 ENV = [r'\envA']*4
-ENV.extend([r'\linear']*6)
+ENV.extend([r'\linear']*5)
 WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
-WORK_DIR.extend([r'D:\dev\replays\work_data\recall']*6)
+WORK_DIR.extend([r'D:\dev\replays\work_data\recall']*5)
 
 
 # L-shape track parameters

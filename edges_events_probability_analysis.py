@@ -14,11 +14,11 @@ VELOCITY_THRESHOLD = 5
 # Linear track parameters
 FRAME_RATE = [10]*6 #Hz
 FRAME_RATE.extend([20]*4)
-MOUSE = [3, 6, 6, 4, 3, 0, 4, 4, 1, 1]
-CAGE = [40, 40, 38, 38, 38, 38, 6, 7, 11, 13]
-ENV = [r'\linear']*6
+MOUSE = [3, 6, 6, 3, 0, 4, 4, 1, 1]
+CAGE = [40, 40, 38, 38, 38, 6, 7, 11, 13]
+ENV = [r'\linear']*5
 ENV.extend([r'\envA']*4)
-WORK_DIR = [r'D:\dev\replays\work_data\recall']*6
+WORK_DIR = [r'D:\dev\replays\work_data\recall']*5
 WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
 
 # L shape parameters
@@ -336,6 +336,7 @@ def main():
     cohen_d = {}
 
     for i, mouse in enumerate(MOUSE):
+
         mouse_name = 'c%dm%d' %(CAGE[i], mouse)
         p_value[mouse_name] = {'p_before': [],
                                'p_after': [],
