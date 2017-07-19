@@ -2,13 +2,14 @@
 # events (SCEs)
 
 import numpy as np
+import os
 from matplotlib.pyplot import *
 import matplotlib.gridspec as gridspec
 
 from edges_events_probability_analysis import \
     create_segments_for_run_epochs_and_edges_entire_session,\
     load_session_data, calculate_conditional_activity_probability,\
-    EDGE_BINS, MOUSE, CAGE, ENV, DAYS, WORK_DIR
+    EDGE_BINS, MOUSE, CAGE, ENV, WORK_DIR
 
 WINDOW = 0.2 #sec
 FRAMES_PER_SECOND = 20
@@ -220,11 +221,12 @@ def main():
     neurons_counter_all_mice = []
     count_run_all_mice = []
     for i, mouse in enumerate(MOUSE):
-
-        for day in DAYS:
+        mouse_dir = WORK_DIR[i] + '\c%dm%d' % (CAGE[i], mouse)
+        days_list = [x[1] for x in os.walk(mouse_dir)][0]
+        for day in days_list:
             print CAGE[i], mouse, day
             print
-            session_dir = WORK_DIR + '\c%dm%d\day%s\%s' %(CAGE[i], mouse, day, ENV)
+            session_dir = mouse_dir + '\%s\%s' % (day, ENV[i])
             events, traces, movement_data, _, p_r_s = load_session_data(session_dir)
             events_segments_before = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
@@ -257,7 +259,7 @@ def main():
     axx[0].set_title('number of neurons per SCE histogram')
     axx[1].hist(count_run_all_mice[relevant_indices], normed=True)
     axx[1].set_title('number of cells in SCE and following run')
-    axx[2].plot(neurons_counter_all_mice[relevant_indices],
+    axx[2].scatter(neurons_counter_all_mice[relevant_indices],
                 count_run_all_mice[relevant_indices], '*')
     axx[2].set_title('number of neurons in SCE Vs.'
                      ' number of congruente neurons in run')

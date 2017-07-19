@@ -12,21 +12,21 @@ EDGE_BINS = [0, 1, 10, 11]
 VELOCITY_THRESHOLD = 5
 
 # Linear track parameters
-# FRAME_RATE = [10]*6 #Hz
-# FRAME_RATE.extend([20]*4)
-# MOUSE = [3, 6, 6, 4, 3, 0, 4, 4, 1, 1]
-# CAGE = [40, 40, 38, 38, 38, 38, 6, 7, 11, 13]
-# ENV = [r'\linear']*6
-# ENV.extend([r'\envA']*4)
-# WORK_DIR = [r'D:\dev\replays\work_data\recall']*6
-# WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
+FRAME_RATE = [10]*6 #Hz
+FRAME_RATE.extend([20]*4)
+MOUSE = [3, 6, 6, 4, 3, 0, 4, 4, 1, 1]
+CAGE = [40, 40, 38, 38, 38, 38, 6, 7, 11, 13]
+ENV = [r'\linear']*6
+ENV.extend([r'\envA']*4)
+WORK_DIR = [r'D:\dev\replays\work_data\recall']*6
+WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
 
 # L shape parameters
-FRAME_RATE = [20]*4 #Hz
-MOUSE = [4, 4, 1, 1]
-CAGE = [6, 7, 11, 13]
-ENV= [r'\envB']*4
-WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
+# FRAME_RATE = [20]*4 #Hz
+# MOUSE = [4, 4, 1, 1]
+# CAGE = [6, 7, 11, 13]
+# ENV= [r'\envB']*4
+# WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
 
 
 def load_session_data(session_dir):
