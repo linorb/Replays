@@ -12,27 +12,26 @@ from edges_events_probability_analysis import \
     EDGE_BINS, MOUSE, CAGE, ENV, WORK_DIR, FRAME_RATE
 
 WINDOW = 0.2 #sec
-FRAMES_PER_SECOND = 20
-NUMBER_OF_PERMUTATIONS = 50
+NUMBER_OF_PERMUTATIONS = 500
 ALPHA = 0.05
 HIGH_PRECENTAGE= 0.1 # for conditional probability in edges - to find those cells that
             # have the high %HIGH_PRECENTAGE percent activation in edge given activation in run
 
 
 
-def plot_all_SCE_segments(segments, SCE_masks):
+def plot_all_SCE_segments(segments, SCE_masks, frame_rate):
     number_of_segments = len(segments)
     for i in range(number_of_segments):
-        plot_segment_activity(segments[i], SCE_masks[i])
+        plot_segment_activity(segments[i], SCE_masks[i], frame_rate)
     return
 
-def count_neurons_in_all_SCEs(segments, SCE_masks):
+def count_neurons_in_all_SCEs(segments, SCE_masks, frame_rate):
 
     neurons_counter_all_SCE = []
     fraction_of_run_all_SCE = []
     for segment, SCE_mask in zip(segments, SCE_masks):
         neurons_counter, fraction_of_run = \
-            count_neurons_in_SCE(segment, SCE_mask)
+            count_neurons_in_SCE(segment, SCE_mask, frame_rate)
         neurons_counter_all_SCE.append(neurons_counter)
         fraction_of_run_all_SCE.append(fraction_of_run)
 
@@ -41,11 +40,10 @@ def count_neurons_in_all_SCEs(segments, SCE_masks):
 
     return neurons_counter_all_SCE, fraction_of_run_all_SCE
 
-def count_neurons_in_SCE(segment, SCE_mask):
+def count_neurons_in_SCE(segment, SCE_mask, frame_rate):
     # Count the number of neurons participate in SCE. and the fraction among
     # them that is active also in run segment
-    frame_rate = 1 / float(FRAMES_PER_SECOND)
-    frames_per_window = WINDOW / frame_rate
+    frames_per_window = WINDOW * frame_rate
     number_of_frames = len(SCE_mask)
     neurons_counter = []
     count_run = []
@@ -62,10 +60,9 @@ def count_neurons_in_SCE(segment, SCE_mask):
 
     return neurons_counter, count_run
 
-def count_SCE_participation_per_neuron(segment, SCE_mask):
+def count_SCE_participation_per_neuron(segment, SCE_mask, frame_rate):
     # Count the number of SCE participation in segment
-    frame_rate = 1 / float(FRAMES_PER_SECOND)
-    frames_per_window = WINDOW / frame_rate
+    frames_per_window = WINDOW * frame_rate
     number_of_frames = len(SCE_mask)
     SCE_counter = np.zeros(segment[0].shape[0])
     for frame in range(number_of_frames):
@@ -75,21 +72,20 @@ def count_SCE_participation_per_neuron(segment, SCE_mask):
 
     return SCE_counter
 
-def count_SCE_participation_in_all_segments(segments, SCE_masks):
+def count_SCE_participation_in_all_segments(segments, SCE_masks, frame_rate):
     SCE_counter =[]
     number_of_segments = len(segments)
     for i in range(number_of_segments):
         SCE_counter.append(count_SCE_participation_per_neuron(segments[i],
-                                                              SCE_masks[i]))
+                                                              SCE_masks[i], frame_rate))
     SCE_counter = np.vstack(SCE_counter)
     number_of_SCE_activations = np.sum(SCE_counter, axis=0)
 
     return number_of_SCE_activations
 
-def plot_segment_activity(segment, SCE_mask):
+def plot_segment_activity(segment, SCE_mask, frame_rate):
     # segmet is a list size 2: segment[0] is edge epoch, segment[1] is run epoch
-    frame_rate = 1 / float(FRAMES_PER_SECOND)
-    frames_per_window = WINDOW / frame_rate
+    frames_per_window = WINDOW * frame_rate
     number_of_possible_SCE = len(SCE_mask)
 
     for frame in range(number_of_possible_SCE):
@@ -109,10 +105,9 @@ def plot_segment_activity(segment, SCE_mask):
                 f.show()
     return
 
-def plot_SCE_covarage(segment, SCE_mask, p_r_s):
+def plot_SCE_covarage(segment, SCE_mask, p_r_s, frame_rate):
     # segment here is only the edge segment
-    frame_rate = 1 / float(FRAMES_PER_SECOND)
-    frames_per_window = WINDOW / frame_rate
+    frames_per_window = WINDOW * frame_rate
     number_of_possible_SCE = len(SCE_mask)
 
     for frame in range(number_of_possible_SCE):
@@ -149,17 +144,17 @@ def plot_SCE_covarage(segment, SCE_mask, p_r_s):
             close()
     return
 
-def find_SCE_in_segments(segments, chance_activation):
+def find_SCE_in_segments(segments, chance_activation, frame_rate):
     SCE_masks = []
     for i, segment in enumerate(segments):
-        SCE_masks.append(find_SCE_in_full_epoch(segment[0], chance_activation))
+        SCE_masks.append(find_SCE_in_full_epoch(segment[0], chance_activation, frame_rate))
 
     return SCE_masks
 
-def find_SCE_in_full_epoch(events, chance_activation):
+def find_SCE_in_full_epoch(events, chance_activation, frame_rate):
     # Find SCEs in events matrix that are above chance level in a sliding time
     # window across entire epoch
-    number_of_events_per_window = count_events_in_sliding_window(events)
+    number_of_events_per_window = count_events_in_sliding_window(events, frame_rate)
 
     # In cases where the events have lower number of frames then the window size,
     # number_of_events_per_window returns [], and so this is what should be
@@ -187,7 +182,7 @@ def find_SCE_in_full_epoch(events, chance_activation):
         return []
 
 
-def calculte_SCE_chance_level(events):
+def calculte_SCE_chance_level(events, frame_rate):
     # Shuffle the events time for each neuron separately, and calculate the
     # chance level for number of active cells within a time window
     # Recommendation: the input events for this function, should be from all
@@ -197,16 +192,15 @@ def calculte_SCE_chance_level(events):
     for i in range(NUMBER_OF_PERMUTATIONS):
         current_event_permutation = shuffle_events_times(events)
         events_count.extend(count_events_in_sliding_window(
-                            current_event_permutation))
+                            current_event_permutation, frame_rate))
 
     hist, edges = np.histogram(events_count, normed=True)
     pdf = np.cumsum(hist)*(edges[1])
     chance_activation = edges[np.where(pdf >= 1-ALPHA)[0][0] + 1]
     return chance_activation
 
-def count_events_in_sliding_window(events):
-    frame_rate = 1 / float(FRAMES_PER_SECOND)
-    frames_per_window = np.int(WINDOW / frame_rate)
+def count_events_in_sliding_window(events, frame_rate):
+    frames_per_window = np.int(WINDOW * frame_rate)
     number_of_frames = events.shape[1]
     total_events_per_frame = np.sum(events>0, axis=0)
     try:
@@ -271,14 +265,14 @@ def main():
                 concatenate_segments(events_segments_before, 0)
 
             chance_SCE_activation = \
-                calculte_SCE_chance_level(concatenated_edge_segments)
+                calculte_SCE_chance_level(concatenated_edge_segments, FRAME_RATE[i])
 
             SCE_masks = find_SCE_in_segments(events_segments_before,
-                                             chance_SCE_activation)
+                                             chance_SCE_activation, FRAME_RATE[i])
 
-            plot_all_SCE_segments(events_segments_before, SCE_masks)
+            plot_all_SCE_segments(events_segments_before, SCE_masks, FRAME_RATE[i])
             neurons_counter, count_run = \
-                count_neurons_in_all_SCEs(events_segments_before, SCE_masks)
+                count_neurons_in_all_SCEs(events_segments_before, SCE_masks, FRAME_RATE[i])
 
             neurons_counter_all_mice.append(neurons_counter)
             count_run_all_mice.append(count_run)
@@ -290,16 +284,9 @@ def main():
     box_data = divide_to_boxes(count_run_all_mice[relevant_indices],
                                neurons_counter_all_mice[relevant_indices])
 
-    f, axx = subplots(3, 1)
-    axx[0].hist(neurons_counter_all_mice[relevant_indices], normed=True)
-    axx[0].set_title('number of neurons per SCE histogram')
-    axx[1].hist(count_run_all_mice[relevant_indices], normed=True)
-    axx[1].set_title('number of cells in SCE and following run')
-    axx[2].boxplot(box_data)
-    axx[2].set_title('number of neurons in SCE Vs.'
-                     ' number of congruente neurons in run')
-    f.show()
-    raw_input('press enter to quit')
+    np.savez('SCE_analysis', neurons_counter_all_mice = neurons_counter_all_mice,
+             count_run_all_mice = count_run_all_mice,
+             relevant_indices =relevant_indices, box_data = box_data)
 
 if __name__ == '__main__':
     main()
