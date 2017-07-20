@@ -20,12 +20,10 @@ HIGH_PRECENTAGE= 0.1 # for conditional probability in edges - to find those cell
 
 
 
-def plot_all_SCE_segments(segments, SCE_masks, p_r_s):
+def plot_all_SCE_segments(segments, SCE_masks):
     number_of_segments = len(segments)
     for i in range(number_of_segments):
-        plot_SCE_covarage(segments[i][0], SCE_masks[i], p_r_s)
-        print i
-
+        plot_segment_activity(segments[i], SCE_masks[i])
     return
 
 def count_neurons_in_all_SCEs(segments, SCE_masks):
@@ -88,7 +86,31 @@ def count_SCE_participation_in_all_segments(segments, SCE_masks):
 
     return number_of_SCE_activations
 
+def plot_segment_activity(segment, SCE_mask):
+    # segmet is a list size 2: segment[0] is edge epoch, segment[1] is run epoch
+    frame_rate = 1 / float(FRAMES_PER_SECOND)
+    frames_per_window = WINDOW / frame_rate
+    number_of_possible_SCE = len(SCE_mask)
+
+    for frame in range(number_of_possible_SCE):
+        if SCE_mask[frame]:
+            SCE_activity = segment[0][:, frame:frame + frames_per_window]
+            active_neurons = np.sum(SCE_activity, axis=1) > 0
+            run_activity = np.sum(segment[1][active_neurons, :] > 0)
+            if run_activity > 5:
+                ind_neuron_sort = np.argsort(np.argmax(segment[1][active_neurons, :], axis=1))
+                f, axx = subplots(1, 2, sharey=True)
+                axx[0].matshow(SCE_activity[active_neurons, :][ind_neuron_sort, :],
+                               interpolation='none', aspect='auto')
+                axx[0].set_title('SCE activity')
+                axx[1].matshow(segment[1][active_neurons, :][ind_neuron_sort, :],
+                               interpolation='none', aspect='auto')
+                axx[1].set_title('Run activity')
+                f.show()
+    return
+
 def plot_SCE_covarage(segment, SCE_mask, p_r_s):
+    # segment here is only the edge segment
     frame_rate = 1 / float(FRAMES_PER_SECOND)
     frames_per_window = WINDOW / frame_rate
     number_of_possible_SCE = len(SCE_mask)
@@ -217,6 +239,15 @@ def concatenate_segments(events_segments, segment_type):
 
     return concatenated_segments
 
+def divide_to_boxes(x,y):
+    # divied x to boxes valued in y. assuming integers in y
+    max_box_value = int(np.max(y))
+    boxes = []
+    for i in range(max_box_value):
+        boxes.append(x[y == i])
+
+    return boxes
+
 def main():
     neurons_counter_all_mice = []
     count_run_all_mice = []
@@ -245,6 +276,7 @@ def main():
             SCE_masks = find_SCE_in_segments(events_segments_before,
                                              chance_SCE_activation)
 
+            plot_all_SCE_segments(events_segments_before, SCE_masks)
             neurons_counter, count_run = \
                 count_neurons_in_all_SCEs(events_segments_before, SCE_masks)
 
@@ -255,13 +287,15 @@ def main():
     count_run_all_mice = np.concatenate(count_run_all_mice)
 
     relevant_indices = ~np.isnan(count_run_all_mice)
+    box_data = divide_to_boxes(count_run_all_mice[relevant_indices],
+                               neurons_counter_all_mice[relevant_indices])
+
     f, axx = subplots(3, 1)
     axx[0].hist(neurons_counter_all_mice[relevant_indices], normed=True)
     axx[0].set_title('number of neurons per SCE histogram')
     axx[1].hist(count_run_all_mice[relevant_indices], normed=True)
     axx[1].set_title('number of cells in SCE and following run')
-    axx[2].scatter(neurons_counter_all_mice[relevant_indices],
-                count_run_all_mice[relevant_indices], '*')
+    axx[2].boxplot(box_data)
     axx[2].set_title('number of neurons in SCE Vs.'
                      ' number of congruente neurons in run')
     f.show()
