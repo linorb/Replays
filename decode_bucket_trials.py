@@ -18,7 +18,7 @@ WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 VELOCITY_THRESHOLD = 1
 NUMBER_OF_BINS = 24
 SPACE_BINNING = 2
-NUMBER_OF_PERMUTATIONS = 1
+NUMBER_OF_PERMUTATIONS = 10
 
 def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -69,9 +69,9 @@ def count_edge_bins(bins, edge_bins):
     return number_of_edge_bins, edge_bins_mask
 
 def test_bucket_trial(events, p_neuron_bin, edge_bins):
-    # Decode by using maximum-likelihood decoder for two environments a bucket trial
-    # and return the decoding results, parentage of decoding from each environment,
-    # and the division to edge bins and rest of track
+    # Decode by using maximum-likelihood decoder for two environments a bucket
+    #  trial and return the decoding results, parentage of decoding from each
+    # environment, and the division to edge bins and rest of track
     number_of_frames = events.shape[1]
 
     decoded_bins = np.zeros((number_of_frames))
@@ -80,8 +80,9 @@ def test_bucket_trial(events, p_neuron_bin, edge_bins):
     # Decode each frame in events:
     for frame in range(number_of_frames):
         if np.sum(events[:, frame]) > 0:
-            decoded_bins[frame], environment_name = decode_most_likely_bin_and_environment(
-                                                    np.expand_dims(events[:, frame], axis=1), p_neuron_bin)
+            decoded_bins[frame], environment_name = \
+                decode_most_likely_bin_and_environment(
+                np.expand_dims(events[:, frame], axis=1), p_neuron_bin)
             if 'envA' in environment_name:
                 decoded_env[frame] = 0
             elif 'envB' in environment_name:
@@ -104,14 +105,11 @@ def test_bucket_trial(events, p_neuron_bin, edge_bins):
                   }
     decoded_env = decoded_env[~np.isnan(decoded_env)]
     decoded_bins = decoded_bins[~np.isnan(decoded_bins)]
-    statistics['envA']['overall_decoding_fraction'] = sum(
-        decoded_env == 0)/np.float32(len(decoded_env))
-    statistics['envB']['overall_decoding_fraction'] = sum(
-        decoded_env == 1) / np.float32(len(decoded_env))
-    statistics['bucketA']['overall_decoding_fraction'] = sum(
-        decoded_env == 2) / np.float32(len(decoded_env))
-    statistics['bucketB']['overall_decoding_fraction'] = sum(
-        decoded_env == 3) / np.float32(len(decoded_env))
+
+    statistics['envA']['overall_decoding_fraction'] = \
+        sum(decoded_env == 0)/np.float32(len(decoded_env))
+    statistics['envB']['overall_decoding_fraction'] = \
+        sum(decoded_env == 1) / np.float32(len(decoded_env))
 
     number_of_edge_binsA, _ = count_edge_bins(decoded_bins[decoded_env == 0],
                                               edge_bins)
@@ -125,24 +123,33 @@ def test_bucket_trial(events, p_neuron_bin, edge_bins):
 
     return statistics, decoded_bins, decoded_env
 
-def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin, edge_bins,
+
+
+def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin,
+                                               edge_bins,
                                                correct_decoding_percentage,
-                                         number_of_permutations, environment):
+                                               number_of_permutations,
+                                               environment):
+
     decoding_fraction = np.zeros((number_of_permutations))
     edge_fraction = np.zeros((number_of_permutations))
     for i in range(number_of_permutations):
         # shuffling neurons identities
         events_permutation = np.random.permutation(events)
-        statistics, decoded_bins, decoded_env =  test_bucket_trial(events_permutation, p_neuron_bin, edge_bins)
-        # plot_two_env_histogram(decoded_bins, decoded_env, 'random')
-        decoding_fraction[i] = (statistics[environment]['overall_decoding_fraction'])
+
+        statistics, _, _ =  test_bucket_trial(events_permutation,
+                                              p_neuron_bin, edge_bins)
+        decoding_fraction[i] = (statistics[environment]\
+                                    ['overall_decoding_fraction'])
         edge_fraction[i] = (statistics[environment]['edge_decoding_fraction'])
 
     p_val = {}
     p_val['overall_decoding_fraction'] = \
-        sum(decoding_fraction > correct_decoding_percentage['overall_decoding_fraction'])/np.float32(number_of_permutations)
+        sum(decoding_fraction > correct_decoding_percentage\
+            ['overall_decoding_fraction'])/np.float32(number_of_permutations)
     p_val['edge_decoding_fraction'] = \
-        sum(edge_fraction > correct_decoding_percentage['edge_decoding_fraction'])/np.float32(number_of_permutations)
+        sum(edge_fraction > correct_decoding_percentage\
+            ['edge_decoding_fraction'])/np.float32(number_of_permutations)
 
     return p_val
 
@@ -230,7 +237,14 @@ def plot_decoded_bin_vs_number_of_active_cells(decoded_bins, decoded_env,
 
 def main():
     for i, mouse in enumerate(MOUSE):
-        cell_reg_filename = WORK_DIR + '\c%dm%d\cellRegisteredFixed.mat' %(CAGE[i], mouse)
+        if i>0:
+            continue
+        correct_decoding_percentage = []
+        edge_decoding_percentage = []
+        p_val_correct = []
+        p_val_edge = []
+        cell_reg_filename = WORK_DIR + '\c%dm%d\cellRegisteredFixed.mat' \
+                                       %(CAGE[i], mouse)
         cell_registration = matlab.load_cell_registration(cell_reg_filename)
 
         for session_ind, day in enumerate(DAYS):
@@ -238,11 +252,10 @@ def main():
             place_cells = []
             p_neuron_bin = {}
             # Create training data for environment A
-            session_dir = WORK_DIR + '\c%dm%d\day%s\%s' %(CAGE[i], mouse, day,
-                                                          ENV[0])
-            events_tracesA, movement_dataA = \
-                load_session_data(session_dir, cell_registration, 2*session_ind)
-
+            session_dir = WORK_DIR + '\c%dm%d\day%s\%s'\
+                                     %(CAGE[i], mouse, day, ENV[0])
+            events_tracesA, movement_dataA = load_session_data\
+                (session_dir, cell_registration, 2*session_ind)
             linear_trials_indicesA = range(len(events_tracesA))[1:-1]
             bucket_trials_indicesA = [0, len(events_tracesA) - 1]
             [binsA, eventsA] = create_training_data\
@@ -281,9 +294,9 @@ def main():
             binsB = wide_binning(binsB, NUMBER_OF_BINS, SPACE_BINNING)
             velocityB = concatenate_movment_data\
                 (movement_dataB, 'velocity', linear_trials_indicesB)
+
             velocity_positive = velocityB > VELOCITY_THRESHOLD
             velocity_negative = velocityB < -VELOCITY_THRESHOLD
-
             place_cells_positive, _, _ = find_place_cells\
                 (binsB[velocity_positive], eventsB[:, velocity_positive])
 
@@ -292,6 +305,7 @@ def main():
 
             place_cellsB = np.concatenate\
                 ([place_cells_positive, place_cells_negative])
+
 
             place_cells.append(place_cellsB)
 
@@ -303,69 +317,102 @@ def main():
                 (binsA[velocityA > VELOCITY_THRESHOLD],
                  eventsA[place_cells, :][:, velocityA >0])
 
-            p_neuron_bin['envA_positive'] = p_neuron_binA_positive
+            p_neuron_bin['envA_positive'] = [p_neuron_binA_positive]
             p_neuron_binA_negative = maximum_likelihood.calculate_p_r_s_matrix\
                 (binsA[velocityA < -VELOCITY_THRESHOLD],
                  eventsA[place_cells, :][:, velocityA < 0])
 
-            p_neuron_bin['envA_negative'] = p_neuron_binA_negative
-
+            p_neuron_bin['envA_negative'] = [p_neuron_binA_negative]
             p_neuron_binB_positive = maximum_likelihood.calculate_p_r_s_matrix\
                 (binsB[velocityB > VELOCITY_THRESHOLD],
                  eventsB[place_cells, :][:, velocityB > 0])
 
-            p_neuron_bin['envB_positive'] = p_neuron_binB_positive
+            p_neuron_bin['envB_positive'] = [p_neuron_binB_positive]
             p_neuron_binB_negative = maximum_likelihood.calculate_p_r_s_matrix\
                 (binsB[velocityB < -VELOCITY_THRESHOLD],
                  eventsB[place_cells, :][:, velocityB < 0])
 
-            p_neuron_bin['envB_negative'] = p_neuron_binB_negative
+            p_neuron_bin['envB_negative'] = [p_neuron_binB_negative]
 
-            # Adding training data from bucket one bucket and Testing
-            # on the other bucket
+            for trial in range(2):
+                trial_events_A = events_tracesA[bucket_trials_indicesA[trial]]\
+                [place_cells, :]
+                statistics, _, _ = test_bucket_trial(trial_events_A,
+                                                     p_neuron_bin, EDGE_BINS)
+                correct_decoding_percentage.append\
+                    (statistics['envA']['overall_decoding_fraction'])
 
-            for train_trial, test_trial in zip([0, 1], [1, 0]):
-                # Adding a bucket trials for training
-                [bucket_binA,
-                 bucket_eventsA] = create_bucket_training_data \
-                    (events_tracesA, [bucket_trials_indicesA[train_trial]])
+                edge_decoding_percentage.append\
+                    (statistics['envA']['edge_decoding_fraction'])
 
-                [bucket_binB,
-                 bucket_eventsB] = create_bucket_training_data \
-                    (events_tracesB, [bucket_trials_indicesB[train_trial]])
+                p_val = calculate_p_val_for_correct_decoding_trial\
+                    (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envA'],
+                    NUMBER_OF_PERMUTATIONS, 'envA')
 
-                p_neuron_bin['bucketA'] = \
-                    maximum_likelihood.\
-                    calculate_p_r_s_matrix(bucket_binA,
-                                           bucket_eventsA[place_cells, :])
+                p_val_correct.append(p_val['overall_decoding_fraction'])
+                p_val_edge.append(p_val['edge_decoding_fraction'])
 
-                p_neuron_bin['bucketB'] = \
-                    maximum_likelihood. \
-                        calculate_p_r_s_matrix(bucket_binB,
-                                               bucket_eventsB[place_cells, :])
+                trial_events_B = events_tracesB[bucket_trials_indicesB[trial]]\
+                    [place_cells, :]
 
-                # Testing bucket from environment A
-                trial_events_A = \
-                    events_tracesA\
-                    [bucket_trials_indicesA[test_trial]][place_cells, :]
+                statistics, _, _ = test_bucket_trial(trial_events_B,
+                                                     p_neuron_bin, EDGE_BINS)
 
-                statistics, decoded_bins, decoded_env = test_bucket_trial\
-                    (trial_events_A, p_neuron_bin, EDGE_BINS)
+                correct_decoding_percentage.append\
+                    (statistics['envB']['overall_decoding_fraction'])
 
-                plot_decoded_bins(decoded_bins, decoded_env, 'Bucket A')
+                edge_decoding_percentage.append\
+                    (statistics['envB']['edge_decoding_fraction'])
 
-                # Testing bucket from environment B
-                trial_events_B = \
-                    events_tracesB\
-                    [bucket_trials_indicesB[test_trial]][place_cells, :]
+                p_val = calculate_p_val_for_correct_decoding_trial\
+                    (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envB'],
+                     NUMBER_OF_PERMUTATIONS, 'envB')
 
-                statistics, decoded_bins, decoded_env = \
-                    test_bucket_trial(trial_events_B, p_neuron_bin, EDGE_BINS)
+                p_val_correct.append(p_val['overall_decoding_fraction'])
+                p_val_edge.append(p_val['edge_decoding_fraction'])
 
-                plot_decoded_bins(decoded_bins, decoded_env, 'Bucket B')
+        np.savez('bucket_decoding_statistics_c%sm%s' %(CAGE[i], mouse),
+                 correct_decoding_percentage = correct_decoding_percentage,
+                 edge_decoding_percentage = edge_decoding_percentage,
+                 p_val_correct = p_val_correct,
+                 p_val_edge = p_val_edge)
 
-                raw_input('press enter')
+        f1, axx1 = subplots(1, 2, sharey=True, sharex=True)
+        axx1[0].plot(p_val_correct[0:28:4], correct_decoding_percentage[0:28:4],
+                     'ro', label='A first')
+        axx1[0].plot(p_val_correct[1:28:4], correct_decoding_percentage[1:28:4],
+                     'bo', label='B first')
+        axx1[0].plot(p_val_correct[2:28:4], correct_decoding_percentage[2:28:4],
+                     'go', label='A last')
+        axx1[0].plot(p_val_correct[3:28:4], correct_decoding_percentage[3:28:4],
+                     'ko', label='B last')
+        axx1[0].set_ylim((-0.1, 1.1))
+        axx1[0].set_xlim((-0.1, 1.1))
+        axx1[0].set_title(
+            'P value Vs. correct decoding fraction c%sm%s' % (CAGE[i], mouse))
+        axx1[0].set_ylabel('correct decoding fraction')
+        axx1[0].set_xlabel('P value')
+        axx1[0].legend(loc="upper right")
 
+        axx1[1].plot(p_val_edge[0:28:4], edge_decoding_percentage[0:28:4], 'ro',
+                     label='A first')
+        axx1[1].plot(p_val_edge[1:28:4], edge_decoding_percentage[1:28:4], 'bo',
+                     label='B first')
+        axx1[1].plot(p_val_edge[2:28:4], edge_decoding_percentage[2:28:4], 'go',
+                     label='A last')
+        axx1[1].plot(p_val_edge[3:28:4], edge_decoding_percentage[3:28:4], 'ko',
+                     label='B last')
+        axx1[1].set_ylim((-0.1, 1.1))
+        axx1[1].set_xlim((-0.1, 1.1))
+        axx1[1].set_title(
+            'P value Vs. edge decoding fraction c%sm%s' % (CAGE[i], mouse))
+        axx1[1].set_ylabel('edge decoding fraction')
+        axx1[1].set_xlabel('P value')
+        axx1[1].legend(loc="upper right")
+
+        f1.show()
+        #
+    raw_input('press enter')
 
 if __name__ == '__main__':
     main()
