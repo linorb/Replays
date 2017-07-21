@@ -233,12 +233,6 @@ def concatenate_segments(events_segments, segment_type):
 
     return concatenated_segments
 
-def divide_to_boxes(x,y):
-    # divied x to boxes valued in y. assuming integers in y
-    max_box_value = int(np.max(y))
-    boxes = []
-    for i in range(max_box_value):
-        boxes.append(x[y == i])
 
     return boxes
 
@@ -286,7 +280,9 @@ def main():
 
     np.savez('SCE_analysis', neurons_counter_all_mice = neurons_counter_all_mice,
              count_run_all_mice = count_run_all_mice,
-             relevant_indices =relevant_indices, box_data = box_data)
+             relevant_indices =relevant_indices)
+
+    raw_input('press enter')
 
 if __name__ == '__main__':
     main()
