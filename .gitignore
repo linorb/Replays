@@ -111,3 +111,4 @@ ENV/
 
 # Results folders
 work_data/
+*.tmp
