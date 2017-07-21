@@ -11,6 +11,8 @@ from edges_events_probability_analysis import \
     load_session_data,\
     EDGE_BINS, MOUSE, CAGE, ENV, WORK_DIR, FRAME_RATE
 
+from bambi.tools.activity_loading import decode_entire_trial
+
 WINDOW = 0.2 #sec
 NUMBER_OF_PERMUTATIONS = 500
 ALPHA = 0.05
@@ -19,10 +21,13 @@ HIGH_PRECENTAGE= 0.1 # for conditional probability in edges - to find those cell
 
 
 
-def plot_all_SCE_segments(segments, SCE_masks, frame_rate):
+def plot_all_SCE_segments(segments, SCE_masks, frame_rate, place_cells, p_r_s):
     number_of_segments = len(segments)
     for i in range(number_of_segments):
         plot_segment_activity(segments[i], SCE_masks[i], frame_rate)
+        plot_decoded_SCE_activity(segments[i], SCE_masks[i], frame_rate, place_cells,
+                                  [p_r_s])
+        raw_input('press enter')
     return
 
 def count_neurons_in_all_SCEs(segments, SCE_masks, frame_rate):
@@ -233,8 +238,22 @@ def concatenate_segments(events_segments, segment_type):
 
     return concatenated_segments
 
+def plot_decoded_SCE_activity(segment, SCE_mask, frame_rate, place_cells, p_r_s):
+    frames_per_window = WINDOW * frame_rate
+    number_of_possible_SCE = len(SCE_mask)
 
-    return boxes
+    for frame in range(number_of_possible_SCE):
+        if SCE_mask[frame]:
+            SCE_activity = segment[0][:, frame:frame + frames_per_window]
+            SCE_activity = SCE_activity[place_cells, :]
+            decoded_activity, _ = decode_entire_trial(SCE_activity, p_r_s)
+            f, axx = subplots(1,2,sharex=True)
+            axx[0].matshow(SCE_activity, interpolation='none', aspect='auto')
+            axx[0].set_title('SCE activity')
+            axx[1].plot(decoded_activity)
+            axx[1].set_title('Decoded activity')
+            f.show()
+    return
 
 def main():
     neurons_counter_all_mice = []
@@ -246,7 +265,7 @@ def main():
             print CAGE[i], mouse, day
             print
             session_dir = mouse_dir + '\%s\%s' % (day, ENV[i])
-            events, traces, movement_data, _, p_r_s = load_session_data(session_dir)
+            events, traces, movement_data, place_cells, p_r_s = load_session_data(session_dir)
             events_segments_before = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
                                                             movement_data,
@@ -263,8 +282,8 @@ def main():
 
             SCE_masks = find_SCE_in_segments(events_segments_before,
                                              chance_SCE_activation, FRAME_RATE[i])
-
-            plot_all_SCE_segments(events_segments_before, SCE_masks, FRAME_RATE[i])
+            plot_all_SCE_segments(events_segments_before, SCE_masks,
+                                  FRAME_RATE[i], place_cells, p_r_s)
             neurons_counter, count_run = \
                 count_neurons_in_all_SCEs(events_segments_before, SCE_masks, FRAME_RATE[i])
 
@@ -275,8 +294,6 @@ def main():
     count_run_all_mice = np.concatenate(count_run_all_mice)
 
     relevant_indices = ~np.isnan(count_run_all_mice)
-    box_data = divide_to_boxes(count_run_all_mice[relevant_indices],
-                               neurons_counter_all_mice[relevant_indices])
 
     np.savez('SCE_analysis', neurons_counter_all_mice = neurons_counter_all_mice,
              count_run_all_mice = count_run_all_mice,

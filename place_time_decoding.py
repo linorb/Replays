@@ -10,9 +10,9 @@ from zivlab.analysis.place_cells import find_place_cells
 
 # Linear track parameters
 FRAME_RATE = [20]*4
-FRAME_RATE.extend([10]*6) #Hz
+FRAME_RATE.extend([10]*5) #Hz
 MOUSE = [4, 4, 1, 1, 6, 3, 6, 3, 0]
-CAGE = [7, 6, 11, 13, 40, 40, 38, 38, 38]
+CAGE = [6, 7, 11, 13, 40, 40, 38, 38, 38]
 ENV = [r'\envA']*4
 ENV.extend([r'\linear']*5)
 WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
@@ -248,8 +248,8 @@ def main():
                                           %(CAGE[i], mouse, train_session_ind,
                                             test_session_ind, test_trial, float(mean_error_bins))
 
-                        # plot_decoded_bins(estimated_bins, test_bins,
-                        #                   session_details)
+                        plot_decoded_bins(estimated_bins, test_bins,
+                                          session_details)
 
                         mean_error_all_sessions \
                             [np.abs(train_session_ind - test_session_ind)]. \
@@ -299,8 +299,8 @@ def main():
                                              test_session_ind, test_trial,
                                              float(mean_error_bins))
 
-                        # plot_decoded_bins(estimated_bins, test_bins,
-                        #                   session_details)
+                        plot_decoded_bins(estimated_bins, test_bins,
+                                          session_details)
 
                         mean_error_all_sessions\
                         [np.abs(train_session_ind - test_session_ind)].\
@@ -308,7 +308,7 @@ def main():
 
         path_fig = r'C:\Users\Administrator\Documents\Lab notebook\figures\19-7-17\time lapse decoder\linear'
         plot_mean_error(mean_error_all_sessions, 'C%sM%s' % (CAGE[i], mouse), path_fig)
-
+        raw_input('press enter')
         close("all")
 
 if __name__ == '__main__':

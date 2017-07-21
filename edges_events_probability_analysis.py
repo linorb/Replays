@@ -12,7 +12,7 @@ EDGE_BINS = [0, 1, 10, 11]
 VELOCITY_THRESHOLD = 5
 
 # Linear track parameters
-FRAME_RATE = [10]*6 #Hz
+FRAME_RATE = [10]*5 #Hz
 FRAME_RATE.extend([20]*4)
 MOUSE = [3, 6, 6, 3, 0, 4, 4, 1, 1]
 CAGE = [40, 40, 38, 38, 38, 6, 7, 11, 13]
@@ -63,13 +63,11 @@ def load_session_data(session_dir):
                                                   min_number_of_events=15)
     place_cells = np.unique(np.concatenate([place_cells_forward,
                                             place_cells_backward]))
-    p_r_s = {}
-    p_r_s['forward'] = calculate_p_r_s_matrix(bins[forward_velocity],
-                                              events[place_cells, :]\
-                                              [:,forward_velocity])
-    p_r_s['backward'] = calculate_p_r_s_matrix(bins[backward_velocity],
-                                               events[place_cells, :]\
-                                               [:,backward_velocity])
+    velocity_ind = np.abs(velocity) > VELOCITY_THRESHOLD
+    p_r_s = calculate_p_r_s_matrix(bins[velocity_ind],
+                                  events[place_cells, :]\
+                                  [:,velocity_ind])
+
 
     events = order_events_into_trials(all_events, frame_log)
     traces = order_events_into_trials(all_traces, frame_log)
