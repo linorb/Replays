@@ -18,7 +18,7 @@ WORK_DIR = r'D:\dev\replays\work_data\two_environments'
 VELOCITY_THRESHOLD = 1
 NUMBER_OF_BINS = 24
 SPACE_BINNING = 2
-NUMBER_OF_PERMUTATIONS = 10
+NUMBER_OF_PERMUTATIONS = 1000
 
 def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
@@ -212,10 +212,9 @@ def plot_decoded_bins(decoded_bins, decoded_env, correct_env_name):
     return
 
 def plot_decoded_bin_vs_number_of_active_cells(decoded_bins, decoded_env,
+                                               number_of_events_per_frame,
                                                events, axx):
-    number_of_events_per_frame = np.sum(events > 0, axis=0)
-    number_of_events_per_frame = \
-        number_of_events_per_frame[number_of_events_per_frame > 0]
+
 
     axx[0].plot(decoded_bins[decoded_env == 0],
                 number_of_events_per_frame[decoded_env == 0], '*')
@@ -237,12 +236,15 @@ def plot_decoded_bin_vs_number_of_active_cells(decoded_bins, decoded_env,
 
 def main():
     for i, mouse in enumerate(MOUSE):
-        if i>0:
-            continue
+        # if i==0:
+        #     continue
         correct_decoding_percentage = []
         edge_decoding_percentage = []
         p_val_correct = []
         p_val_edge = []
+        decoded_bins_all_sessions = []
+        decoded_env_all_sessions = []
+        number_of_events_per_frame_all_sessions = []
         cell_reg_filename = WORK_DIR + '\c%dm%d\cellRegisteredFixed.mat' \
                                        %(CAGE[i], mouse)
         cell_registration = matlab.load_cell_registration(cell_reg_filename)
@@ -337,80 +339,105 @@ def main():
             for trial in range(2):
                 trial_events_A = events_tracesA[bucket_trials_indicesA[trial]]\
                 [place_cells, :]
-                statistics, _, _ = test_bucket_trial(trial_events_A,
-                                                     p_neuron_bin, EDGE_BINS)
-                correct_decoding_percentage.append\
-                    (statistics['envA']['overall_decoding_fraction'])
+                statistics , decoded_bins, decoded_env = \
+                    test_bucket_trial(trial_events_A, p_neuron_bin, EDGE_BINS)
 
-                edge_decoding_percentage.append\
-                    (statistics['envA']['edge_decoding_fraction'])
+                number_of_events_per_frame = np.sum(trial_events_A > 0, axis=0)
+                number_of_events_per_frame = \
+                    number_of_events_per_frame[number_of_events_per_frame > 0]
 
-                p_val = calculate_p_val_for_correct_decoding_trial\
-                    (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envA'],
-                    NUMBER_OF_PERMUTATIONS, 'envA')
+                decoded_bins_all_sessions.append(decoded_bins)
+                decoded_env_all_sessions.append(decoded_env)
+                number_of_events_per_frame_all_sessions.append\
+                    (number_of_events_per_frame)
 
-                p_val_correct.append(p_val['overall_decoding_fraction'])
-                p_val_edge.append(p_val['edge_decoding_fraction'])
+                # correct_decoding_percentage.append\
+                #     (statistics['envA']['overall_decoding_fraction'])
+                #
+                # edge_decoding_percentage.append\
+                #     (statistics['envA']['edge_decoding_fraction'])
+                #
+                # p_val = calculate_p_val_for_correct_decoding_trial\
+                #     (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envA'],
+                #     NUMBER_OF_PERMUTATIONS, 'envA')
+                #
+                # p_val_correct.append(p_val['overall_decoding_fraction'])
+                # p_val_edge.append(p_val['edge_decoding_fraction'])
 
                 trial_events_B = events_tracesB[bucket_trials_indicesB[trial]]\
                     [place_cells, :]
 
-                statistics, _, _ = test_bucket_trial(trial_events_B,
-                                                     p_neuron_bin, EDGE_BINS)
+                statistics, decoded_bins, decoded_env  = \
+                    test_bucket_trial(trial_events_B, p_neuron_bin, EDGE_BINS)
 
-                correct_decoding_percentage.append\
-                    (statistics['envB']['overall_decoding_fraction'])
+                number_of_events_per_frame = np.sum(trial_events_B > 0, axis=0)
+                number_of_events_per_frame = \
+                    number_of_events_per_frame[number_of_events_per_frame > 0]
 
-                edge_decoding_percentage.append\
-                    (statistics['envB']['edge_decoding_fraction'])
+                decoded_bins_all_sessions.append(decoded_bins)
+                decoded_env_all_sessions.append(decoded_env)
+                number_of_events_per_frame_all_sessions.append \
+                    (number_of_events_per_frame)
 
-                p_val = calculate_p_val_for_correct_decoding_trial\
-                    (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envB'],
-                     NUMBER_OF_PERMUTATIONS, 'envB')
+                # correct_decoding_percentage.append\
+                #     (statistics['envB']['overall_decoding_fraction'])
+                #
+                # edge_decoding_percentage.append\
+                #     (statistics['envB']['edge_decoding_fraction'])
+                #
+                # p_val = calculate_p_val_for_correct_decoding_trial\
+                #     (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envB'],
+                #      NUMBER_OF_PERMUTATIONS, 'envB')
+                #
+                # p_val_correct.append(p_val['overall_decoding_fraction'])
+                # p_val_edge.append(p_val['edge_decoding_fraction'])
 
-                p_val_correct.append(p_val['overall_decoding_fraction'])
-                p_val_edge.append(p_val['edge_decoding_fraction'])
+        # np.savez('bucket_decoding_statistics_c%sm%s' %(CAGE[i], mouse),
+        #          correct_decoding_percentage = correct_decoding_percentage,
+        #          edge_decoding_percentage = edge_decoding_percentage,
+        #          p_val_correct = p_val_correct,
+        #          p_val_edge = p_val_edge)
 
-        np.savez('bucket_decoding_statistics_c%sm%s' %(CAGE[i], mouse),
-                 correct_decoding_percentage = correct_decoding_percentage,
-                 edge_decoding_percentage = edge_decoding_percentage,
-                 p_val_correct = p_val_correct,
-                 p_val_edge = p_val_edge)
+        np.savez('bucket_decoding_results_c%sm%s' % (CAGE[i], mouse),
+                 decoded_bins_all_sessions=decoded_bins_all_sessions,
+                 decoded_env_all_sessions=decoded_env_all_sessions,
+                 number_of_events_per_frame_all_sessions=
+                 number_of_events_per_frame_all_sessions)
 
-        f1, axx1 = subplots(1, 2, sharey=True, sharex=True)
-        axx1[0].plot(p_val_correct[0:28:4], correct_decoding_percentage[0:28:4],
-                     'ro', label='A first')
-        axx1[0].plot(p_val_correct[1:28:4], correct_decoding_percentage[1:28:4],
-                     'bo', label='B first')
-        axx1[0].plot(p_val_correct[2:28:4], correct_decoding_percentage[2:28:4],
-                     'go', label='A last')
-        axx1[0].plot(p_val_correct[3:28:4], correct_decoding_percentage[3:28:4],
-                     'ko', label='B last')
-        axx1[0].set_ylim((-0.1, 1.1))
-        axx1[0].set_xlim((-0.1, 1.1))
-        axx1[0].set_title(
-            'P value Vs. correct decoding fraction c%sm%s' % (CAGE[i], mouse))
-        axx1[0].set_ylabel('correct decoding fraction')
-        axx1[0].set_xlabel('P value')
-        axx1[0].legend(loc="upper right")
-
-        axx1[1].plot(p_val_edge[0:28:4], edge_decoding_percentage[0:28:4], 'ro',
-                     label='A first')
-        axx1[1].plot(p_val_edge[1:28:4], edge_decoding_percentage[1:28:4], 'bo',
-                     label='B first')
-        axx1[1].plot(p_val_edge[2:28:4], edge_decoding_percentage[2:28:4], 'go',
-                     label='A last')
-        axx1[1].plot(p_val_edge[3:28:4], edge_decoding_percentage[3:28:4], 'ko',
-                     label='B last')
-        axx1[1].set_ylim((-0.1, 1.1))
-        axx1[1].set_xlim((-0.1, 1.1))
-        axx1[1].set_title(
-            'P value Vs. edge decoding fraction c%sm%s' % (CAGE[i], mouse))
-        axx1[1].set_ylabel('edge decoding fraction')
-        axx1[1].set_xlabel('P value')
-        axx1[1].legend(loc="upper right")
-
-        f1.show()
+        # f1, axx1 = subplots(1, 2, sharey=True, sharex=True)
+        # axx1[0].plot(p_val_correct[0:28:4], correct_decoding_percentage[0:28:4],
+        #              'ro', label='A first')
+        # axx1[0].plot(p_val_correct[1:28:4], correct_decoding_percentage[1:28:4],
+        #              'bo', label='B first')
+        # axx1[0].plot(p_val_correct[2:28:4], correct_decoding_percentage[2:28:4],
+        #              'go', label='A last')
+        # axx1[0].plot(p_val_correct[3:28:4], correct_decoding_percentage[3:28:4],
+        #              'ko', label='B last')
+        # axx1[0].set_ylim((-0.1, 1.1))
+        # axx1[0].set_xlim((-0.1, 1.1))
+        # axx1[0].set_title(
+        #     'P value Vs. correct decoding fraction c%sm%s' % (CAGE[i], mouse))
+        # axx1[0].set_ylabel('correct decoding fraction')
+        # axx1[0].set_xlabel('P value')
+        # axx1[0].legend(loc="upper right")
+        #
+        # axx1[1].plot(p_val_edge[0:28:4], edge_decoding_percentage[0:28:4], 'ro',
+        #              label='A first')
+        # axx1[1].plot(p_val_edge[1:28:4], edge_decoding_percentage[1:28:4], 'bo',
+        #              label='B first')
+        # axx1[1].plot(p_val_edge[2:28:4], edge_decoding_percentage[2:28:4], 'go',
+        #              label='A last')
+        # axx1[1].plot(p_val_edge[3:28:4], edge_decoding_percentage[3:28:4], 'ko',
+        #              label='B last')
+        # axx1[1].set_ylim((-0.1, 1.1))
+        # axx1[1].set_xlim((-0.1, 1.1))
+        # axx1[1].set_title(
+        #     'P value Vs. edge decoding fraction c%sm%s' % (CAGE[i], mouse))
+        # axx1[1].set_ylabel('edge decoding fraction')
+        # axx1[1].set_xlabel('P value')
+        # axx1[1].legend(loc="upper right")
+        #
+        # f1.show()
         #
     raw_input('press enter')
 
