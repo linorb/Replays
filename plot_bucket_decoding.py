@@ -98,6 +98,49 @@ def main():
         f2.suptitle('Bucket decoding C%sM%s' % (CAGE[i], mouse))
         f2.show()
 
+    ####### Plot permutation_results #########
+    for i, mouse in enumerate(MOUSE):
+        f2, axx2 = subplots(2, 2, sharex=True, sharey='row')
+        npzfile = np.load('bucket_permutation_results_c%sm%s.npz'\
+                          %(CAGE[i], mouse))
+        decoded_bins_all_sessions = npzfile['decoded_bins_all_sessions']
+        decoded_env_all_sessions = npzfile['decoded_env_all_sessions']
+        number_of_events_per_frame_all_sessions = npzfile \
+        ['number_of_events_per_frame_all_sessions']
+
+        decoded_bins_all_sessions = np.concatenate(decoded_bins_all_sessions)
+        decoded_env_all_sessions = np.concatenate(decoded_env_all_sessions)
+        number_of_events_per_frame_all_sessions = np.concatenate(
+            number_of_events_per_frame_all_sessions)
+
+        env_A_indices = decoded_env_all_sessions == 0
+        env_B_indices = decoded_env_all_sessions == 1
+
+        box_data_A = divide_to_boxes\
+            (number_of_events_per_frame_all_sessions[env_A_indices],
+             decoded_bins_all_sessions[env_A_indices])
+
+        box_data_B = divide_to_boxes\
+             (number_of_events_per_frame_all_sessions[env_B_indices],
+             decoded_bins_all_sessions[env_B_indices])
+
+        axx2[0, 0].boxplot(box_data_A)
+        axx2[0, 0].set_xlabel('Decoded bin')
+        axx2[0, 0].set_ylabel('Number of events in frame')
+        axx2[0, 0].set_title('Linear track')
+        axx2[0, 1].boxplot(box_data_B)
+        axx2[0, 1].set_xlabel('Decoded bin')
+        axx2[0, 1].set_ylabel('Number of events in frame')
+        axx2[0, 1].set_title('L-shape track')
+        axx2[1, 0].hist(decoded_bins_all_sessions[env_A_indices], normed=True)
+        axx2[1, 0].set_xlabel('Decoded bin')
+        axx2[1, 0].set_ylabel('Probability of decoding')
+        axx2[1, 1].hist(decoded_bins_all_sessions[env_B_indices], normed=True)
+        axx2[1, 1].set_xlabel('Decoded bin')
+        axx2[1, 1].set_ylabel('Probability of decoding')
+        f2.suptitle('Shuffle decoding C%sM%s' % (CAGE[i], mouse))
+        f2.show()
+
     raw_input('press enter')
 
 if __name__ == '__main__':
