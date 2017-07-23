@@ -339,12 +339,10 @@ def main():
             for trial in range(2):
                 trial_events_A = events_tracesA[bucket_trials_indicesA[trial]]\
                 [place_cells, :]
-
-                events_permutation = np.random.permutation(trial_events_A)
                 statistics , decoded_bins, decoded_env = \
-                    test_bucket_trial(events_permutation, p_neuron_bin, EDGE_BINS)
+                    test_bucket_trial(trial_events_A, p_neuron_bin, EDGE_BINS)
 
-                number_of_events_per_frame = np.sum(events_permutation > 0, axis=0)
+                number_of_events_per_frame = np.sum(trial_events_A > 0, axis=0)
                 number_of_events_per_frame = \
                     number_of_events_per_frame[number_of_events_per_frame > 0]
 
@@ -369,13 +367,10 @@ def main():
                 trial_events_B = events_tracesB[bucket_trials_indicesB[trial]]\
                     [place_cells, :]
 
-                events_permutation = np.random.permutation(trial_events_B)
-                statistics, decoded_bins, decoded_env = \
-                    test_bucket_trial(events_permutation, p_neuron_bin,
-                                      EDGE_BINS)
-                number_of_events_per_frame = np.sum(events_permutation > 0,
-                                                    axis=0)
+                statistics, decoded_bins, decoded_env  = \
+                    test_bucket_trial(trial_events_B, p_neuron_bin, EDGE_BINS)
 
+                number_of_events_per_frame = np.sum(trial_events_B > 0, axis=0)
                 number_of_events_per_frame = \
                     number_of_events_per_frame[number_of_events_per_frame > 0]
 
@@ -403,7 +398,7 @@ def main():
         #          p_val_correct = p_val_correct,
         #          p_val_edge = p_val_edge)
 
-        np.savez('bucket_permutation_results_c%sm%s' % (CAGE[i], mouse),
+        np.savez('bucket_decoding_results_c%sm%s' % (CAGE[i], mouse),
                  decoded_bins_all_sessions=decoded_bins_all_sessions,
                  decoded_env_all_sessions=decoded_env_all_sessions,
                  number_of_events_per_frame_all_sessions=
