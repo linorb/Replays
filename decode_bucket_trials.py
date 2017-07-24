@@ -236,8 +236,6 @@ def plot_decoded_bin_vs_number_of_active_cells(decoded_bins, decoded_env,
 
 def main():
     for i, mouse in enumerate(MOUSE):
-        # if i==0:
-        #     continue
         correct_decoding_percentage = []
         edge_decoding_percentage = []
         p_val_correct = []
@@ -245,6 +243,8 @@ def main():
         decoded_bins_all_sessions = []
         decoded_env_all_sessions = []
         number_of_events_per_frame_all_sessions = []
+        all_bins = {'envA': [], 'envB': []}
+        all_velocity = {'envA': [], 'envB': []}
         cell_reg_filename = WORK_DIR + '\c%dm%d\cellRegisteredFixed.mat' \
                                        %(CAGE[i], mouse)
         cell_registration = matlab.load_cell_registration(cell_reg_filename)
@@ -267,7 +267,8 @@ def main():
             binsA = wide_binning(binsA, NUMBER_OF_BINS, SPACE_BINNING)
             velocityA = concatenate_movment_data\
                 (movement_dataA, 'velocity', linear_trials_indicesA)
-
+            all_bins['envA'].append(binsA)
+            all_velocity['envA'].append(velocityA)
             velocity_positive = velocityA > VELOCITY_THRESHOLD
             velocity_negative = velocityA < -VELOCITY_THRESHOLD
             place_cells_positive, _, _ = find_place_cells\
@@ -278,7 +279,7 @@ def main():
 
             place_cellsA = np.concatenate\
                 ([place_cells_positive, place_cells_negative])
-
+            #
             place_cells.append(place_cellsA)
 
             # Create training data for environment B
@@ -296,7 +297,8 @@ def main():
             binsB = wide_binning(binsB, NUMBER_OF_BINS, SPACE_BINNING)
             velocityB = concatenate_movment_data\
                 (movement_dataB, 'velocity', linear_trials_indicesB)
-
+            all_bins['envB'].append(binsB)
+            all_velocity['envB'].append(velocityB)
             velocity_positive = velocityB > VELOCITY_THRESHOLD
             velocity_negative = velocityB < -VELOCITY_THRESHOLD
             place_cells_positive, _, _ = find_place_cells\
@@ -336,6 +338,8 @@ def main():
 
             p_neuron_bin['envB_negative'] = [p_neuron_binB_negative]
 
+            np.savez('bins_velocity_c%sm%s' %(CAGE[i], mouse), all_bins=all_bins,
+                     all_velocity=all_velocity)
             for trial in range(2):
                 trial_events_A = events_tracesA[bucket_trials_indicesA[trial]]\
                 [place_cells, :]
@@ -351,18 +355,18 @@ def main():
                 number_of_events_per_frame_all_sessions.append\
                     (number_of_events_per_frame)
 
-                # correct_decoding_percentage.append\
-                #     (statistics['envA']['overall_decoding_fraction'])
-                #
-                # edge_decoding_percentage.append\
-                #     (statistics['envA']['edge_decoding_fraction'])
-                #
-                # p_val = calculate_p_val_for_correct_decoding_trial\
-                #     (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envA'],
-                #     NUMBER_OF_PERMUTATIONS, 'envA')
-                #
-                # p_val_correct.append(p_val['overall_decoding_fraction'])
-                # p_val_edge.append(p_val['edge_decoding_fraction'])
+                correct_decoding_percentage.append\
+                    (statistics['envA']['overall_decoding_fraction'])
+
+                edge_decoding_percentage.append\
+                    (statistics['envA']['edge_decoding_fraction'])
+
+                p_val = calculate_p_val_for_correct_decoding_trial\
+                    (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envA'],
+                    NUMBER_OF_PERMUTATIONS, 'envA')
+
+                p_val_correct.append(p_val['overall_decoding_fraction'])
+                p_val_edge.append(p_val['edge_decoding_fraction'])
 
                 trial_events_B = events_tracesB[bucket_trials_indicesB[trial]]\
                     [place_cells, :]
@@ -379,24 +383,24 @@ def main():
                 number_of_events_per_frame_all_sessions.append \
                     (number_of_events_per_frame)
 
-                # correct_decoding_percentage.append\
-                #     (statistics['envB']['overall_decoding_fraction'])
-                #
-                # edge_decoding_percentage.append\
-                #     (statistics['envB']['edge_decoding_fraction'])
-                #
-                # p_val = calculate_p_val_for_correct_decoding_trial\
-                #     (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envB'],
-                #      NUMBER_OF_PERMUTATIONS, 'envB')
-                #
-                # p_val_correct.append(p_val['overall_decoding_fraction'])
-                # p_val_edge.append(p_val['edge_decoding_fraction'])
+                correct_decoding_percentage.append\
+                    (statistics['envB']['overall_decoding_fraction'])
 
-        # np.savez('bucket_decoding_statistics_c%sm%s' %(CAGE[i], mouse),
-        #          correct_decoding_percentage = correct_decoding_percentage,
-        #          edge_decoding_percentage = edge_decoding_percentage,
-        #          p_val_correct = p_val_correct,
-        #          p_val_edge = p_val_edge)
+                edge_decoding_percentage.append\
+                    (statistics['envB']['edge_decoding_fraction'])
+
+                p_val = calculate_p_val_for_correct_decoding_trial\
+                    (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envB'],
+                     NUMBER_OF_PERMUTATIONS, 'envB')
+
+                p_val_correct.append(p_val['overall_decoding_fraction'])
+                p_val_edge.append(p_val['edge_decoding_fraction'])
+
+        np.savez('bucket_decoding_statistics_c%sm%s' %(CAGE[i], mouse),
+                 correct_decoding_percentage = correct_decoding_percentage,
+                 edge_decoding_percentage = edge_decoding_percentage,
+                 p_val_correct = p_val_correct,
+                 p_val_edge = p_val_edge)
 
         np.savez('bucket_decoding_results_c%sm%s' % (CAGE[i], mouse),
                  decoded_bins_all_sessions=decoded_bins_all_sessions,
