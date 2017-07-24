@@ -269,18 +269,18 @@ def main():
                 (movement_dataA, 'velocity', linear_trials_indicesA)
             all_bins['envA'].append(binsA)
             all_velocity['envA'].append(velocityA)
-            velocity_positive = velocityA > VELOCITY_THRESHOLD
-            velocity_negative = velocityA < -VELOCITY_THRESHOLD
-            place_cells_positive, _, _ = find_place_cells\
-                (binsA[velocity_positive], eventsA[:, velocity_positive])
-
-            place_cells_negative, _, _ = find_place_cells\
-                (binsA[velocity_negative], eventsA[:, velocity_negative])
-
-            place_cellsA = np.concatenate\
-                ([place_cells_positive, place_cells_negative])
+            # velocity_positive = velocityA > VELOCITY_THRESHOLD
+            # velocity_negative = velocityA < -VELOCITY_THRESHOLD
+            # place_cells_positive, _, _ = find_place_cells\
+            #     (binsA[velocity_positive], eventsA[:, velocity_positive])
             #
-            place_cells.append(place_cellsA)
+            # place_cells_negative, _, _ = find_place_cells\
+            #     (binsA[velocity_negative], eventsA[:, velocity_negative])
+            #
+            # place_cellsA = np.concatenate\
+            #     ([place_cells_positive, place_cells_negative])
+            # #
+            # place_cells.append(place_cellsA)
 
             # Create training data for environment B
             session_dir = WORK_DIR + '\c%dm%d\day%s\%s' % \
@@ -299,114 +299,115 @@ def main():
                 (movement_dataB, 'velocity', linear_trials_indicesB)
             all_bins['envB'].append(binsB)
             all_velocity['envB'].append(velocityB)
-            velocity_positive = velocityB > VELOCITY_THRESHOLD
-            velocity_negative = velocityB < -VELOCITY_THRESHOLD
-            place_cells_positive, _, _ = find_place_cells\
-                (binsB[velocity_positive], eventsB[:, velocity_positive])
+        #     velocity_positive = velocityB > VELOCITY_THRESHOLD
+        #     velocity_negative = velocityB < -VELOCITY_THRESHOLD
+        #     place_cells_positive, _, _ = find_place_cells\
+        #         (binsB[velocity_positive], eventsB[:, velocity_positive])
+        #
+        #     place_cells_negative, _, _ = find_place_cells\
+        #         (binsB[velocity_negative], eventsB[:, velocity_negative])
+        #
+        #     place_cellsB = np.concatenate\
+        #         ([place_cells_positive, place_cells_negative])
+        #
+        #
+        #     place_cells.append(place_cellsB)
+        #
+        #     place_cells = np.concatenate(place_cells)
+        #     place_cells = np.unique(place_cells)
+        #
+        #     # dividing into two directions - positive, negative
+        #     p_neuron_binA_positive = maximum_likelihood.calculate_p_r_s_matrix\
+        #         (binsA[velocityA > VELOCITY_THRESHOLD],
+        #          eventsA[place_cells, :][:, velocityA >0])
+        #
+        #     p_neuron_bin['envA_positive'] = [p_neuron_binA_positive]
+        #     p_neuron_binA_negative = maximum_likelihood.calculate_p_r_s_matrix\
+        #         (binsA[velocityA < -VELOCITY_THRESHOLD],
+        #          eventsA[place_cells, :][:, velocityA < 0])
+        #
+        #     p_neuron_bin['envA_negative'] = [p_neuron_binA_negative]
+        #     p_neuron_binB_positive = maximum_likelihood.calculate_p_r_s_matrix\
+        #         (binsB[velocityB > VELOCITY_THRESHOLD],
+        #          eventsB[place_cells, :][:, velocityB > 0])
+        #
+        #     p_neuron_bin['envB_positive'] = [p_neuron_binB_positive]
+        #     p_neuron_binB_negative = maximum_likelihood.calculate_p_r_s_matrix\
+        #         (binsB[velocityB < -VELOCITY_THRESHOLD],
+        #          eventsB[place_cells, :][:, velocityB < 0])
+        #
+        #     p_neuron_bin['envB_negative'] = [p_neuron_binB_negative]
+        #
+        #     for trial in range(2):
+        #         trial_events_A = events_tracesA[bucket_trials_indicesA[trial]]\
+        #         [place_cells, :]
+        #         statistics , decoded_bins, decoded_env = \
+        #             test_bucket_trial(trial_events_A, p_neuron_bin, EDGE_BINS)
+        #
+        #         number_of_events_per_frame = np.sum(trial_events_A > 0, axis=0)
+        #         number_of_events_per_frame = \
+        #             number_of_events_per_frame[number_of_events_per_frame > 0]
+        #
+        #         decoded_bins_all_sessions.append(decoded_bins)
+        #         decoded_env_all_sessions.append(decoded_env)
+        #         number_of_events_per_frame_all_sessions.append\
+        #             (number_of_events_per_frame)
+        #
+        #         correct_decoding_percentage.append\
+        #             (statistics['envA']['overall_decoding_fraction'])
+        #
+        #         edge_decoding_percentage.append\
+        #             (statistics['envA']['edge_decoding_fraction'])
+        #
+        #         p_val = calculate_p_val_for_correct_decoding_trial\
+        #             (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envA'],
+        #             NUMBER_OF_PERMUTATIONS, 'envA')
+        #
+        #         p_val_correct.append(p_val['overall_decoding_fraction'])
+        #         p_val_edge.append(p_val['edge_decoding_fraction'])
+        #
+        #         trial_events_B = events_tracesB[bucket_trials_indicesB[trial]]\
+        #             [place_cells, :]
+        #
+        #         statistics, decoded_bins, decoded_env  = \
+        #             test_bucket_trial(trial_events_B, p_neuron_bin, EDGE_BINS)
+        #
+        #         number_of_events_per_frame = np.sum(trial_events_B > 0, axis=0)
+        #         number_of_events_per_frame = \
+        #             number_of_events_per_frame[number_of_events_per_frame > 0]
+        #
+        #         decoded_bins_all_sessions.append(decoded_bins)
+        #         decoded_env_all_sessions.append(decoded_env)
+        #         number_of_events_per_frame_all_sessions.append \
+        #             (number_of_events_per_frame)
+        #
+        #         correct_decoding_percentage.append\
+        #             (statistics['envB']['overall_decoding_fraction'])
+        #
+        #         edge_decoding_percentage.append\
+        #             (statistics['envB']['edge_decoding_fraction'])
+        #
+        #         p_val = calculate_p_val_for_correct_decoding_trial\
+        #             (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envB'],
+        #              NUMBER_OF_PERMUTATIONS, 'envB')
+        #
+        #         p_val_correct.append(p_val['overall_decoding_fraction'])
+        #         p_val_edge.append(p_val['edge_decoding_fraction'])
+        #
+        # np.savez('bucket_decoding_statistics_c%sm%s' %(CAGE[i], mouse),
+        #          correct_decoding_percentage = correct_decoding_percentage,
+        #          edge_decoding_percentage = edge_decoding_percentage,
+        #          p_val_correct = p_val_correct,
+        #          p_val_edge = p_val_edge)
+        #
+        # np.savez('bucket_decoding_results_c%sm%s' % (CAGE[i], mouse),
+        #          decoded_bins_all_sessions=decoded_bins_all_sessions,
+        #          decoded_env_all_sessions=decoded_env_all_sessions,
+        #          number_of_events_per_frame_all_sessions=
+        #          number_of_events_per_frame_all_sessions)
 
-            place_cells_negative, _, _ = find_place_cells\
-                (binsB[velocity_negative], eventsB[:, velocity_negative])
-
-            place_cellsB = np.concatenate\
-                ([place_cells_positive, place_cells_negative])
-
-
-            place_cells.append(place_cellsB)
-
-            place_cells = np.concatenate(place_cells)
-            place_cells = np.unique(place_cells)
-
-            # dividing into two directions - positive, negative
-            p_neuron_binA_positive = maximum_likelihood.calculate_p_r_s_matrix\
-                (binsA[velocityA > VELOCITY_THRESHOLD],
-                 eventsA[place_cells, :][:, velocityA >0])
-
-            p_neuron_bin['envA_positive'] = [p_neuron_binA_positive]
-            p_neuron_binA_negative = maximum_likelihood.calculate_p_r_s_matrix\
-                (binsA[velocityA < -VELOCITY_THRESHOLD],
-                 eventsA[place_cells, :][:, velocityA < 0])
-
-            p_neuron_bin['envA_negative'] = [p_neuron_binA_negative]
-            p_neuron_binB_positive = maximum_likelihood.calculate_p_r_s_matrix\
-                (binsB[velocityB > VELOCITY_THRESHOLD],
-                 eventsB[place_cells, :][:, velocityB > 0])
-
-            p_neuron_bin['envB_positive'] = [p_neuron_binB_positive]
-            p_neuron_binB_negative = maximum_likelihood.calculate_p_r_s_matrix\
-                (binsB[velocityB < -VELOCITY_THRESHOLD],
-                 eventsB[place_cells, :][:, velocityB < 0])
-
-            p_neuron_bin['envB_negative'] = [p_neuron_binB_negative]
-
-            np.savez('bins_velocity_c%sm%s' %(CAGE[i], mouse), all_bins=all_bins,
-                     all_velocity=all_velocity)
-            for trial in range(2):
-                trial_events_A = events_tracesA[bucket_trials_indicesA[trial]]\
-                [place_cells, :]
-                statistics , decoded_bins, decoded_env = \
-                    test_bucket_trial(trial_events_A, p_neuron_bin, EDGE_BINS)
-
-                number_of_events_per_frame = np.sum(trial_events_A > 0, axis=0)
-                number_of_events_per_frame = \
-                    number_of_events_per_frame[number_of_events_per_frame > 0]
-
-                decoded_bins_all_sessions.append(decoded_bins)
-                decoded_env_all_sessions.append(decoded_env)
-                number_of_events_per_frame_all_sessions.append\
-                    (number_of_events_per_frame)
-
-                correct_decoding_percentage.append\
-                    (statistics['envA']['overall_decoding_fraction'])
-
-                edge_decoding_percentage.append\
-                    (statistics['envA']['edge_decoding_fraction'])
-
-                p_val = calculate_p_val_for_correct_decoding_trial\
-                    (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envA'],
-                    NUMBER_OF_PERMUTATIONS, 'envA')
-
-                p_val_correct.append(p_val['overall_decoding_fraction'])
-                p_val_edge.append(p_val['edge_decoding_fraction'])
-
-                trial_events_B = events_tracesB[bucket_trials_indicesB[trial]]\
-                    [place_cells, :]
-
-                statistics, decoded_bins, decoded_env  = \
-                    test_bucket_trial(trial_events_B, p_neuron_bin, EDGE_BINS)
-
-                number_of_events_per_frame = np.sum(trial_events_B > 0, axis=0)
-                number_of_events_per_frame = \
-                    number_of_events_per_frame[number_of_events_per_frame > 0]
-
-                decoded_bins_all_sessions.append(decoded_bins)
-                decoded_env_all_sessions.append(decoded_env)
-                number_of_events_per_frame_all_sessions.append \
-                    (number_of_events_per_frame)
-
-                correct_decoding_percentage.append\
-                    (statistics['envB']['overall_decoding_fraction'])
-
-                edge_decoding_percentage.append\
-                    (statistics['envB']['edge_decoding_fraction'])
-
-                p_val = calculate_p_val_for_correct_decoding_trial\
-                    (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envB'],
-                     NUMBER_OF_PERMUTATIONS, 'envB')
-
-                p_val_correct.append(p_val['overall_decoding_fraction'])
-                p_val_edge.append(p_val['edge_decoding_fraction'])
-
-        np.savez('bucket_decoding_statistics_c%sm%s' %(CAGE[i], mouse),
-                 correct_decoding_percentage = correct_decoding_percentage,
-                 edge_decoding_percentage = edge_decoding_percentage,
-                 p_val_correct = p_val_correct,
-                 p_val_edge = p_val_edge)
-
-        np.savez('bucket_decoding_results_c%sm%s' % (CAGE[i], mouse),
-                 decoded_bins_all_sessions=decoded_bins_all_sessions,
-                 decoded_env_all_sessions=decoded_env_all_sessions,
-                 number_of_events_per_frame_all_sessions=
-                 number_of_events_per_frame_all_sessions)
+        np.savez('bins_velocity_c%sm%s' % (CAGE[i], mouse), all_bins=all_bins,
+                 all_velocity=all_velocity)
 
         # f1, axx1 = subplots(1, 2, sharey=True, sharex=True)
         # axx1[0].plot(p_val_correct[0:28:4], correct_decoding_percentage[0:28:4],
