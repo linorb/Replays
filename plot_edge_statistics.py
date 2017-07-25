@@ -13,8 +13,8 @@ def main():
     t_value = npzfile['t_value'].all()
     cohen_d = npzfile['cohen_d'].all()
 
-    MOUSE = [3, 6, 6, 4, 3, 0, 4, 4, 1, 1]
-    CAGE = [40, 40, 38, 38, 38, 38, 6, 7, 11, 13]
+    MOUSE = [3, 6, 6, 3, 0, 4, 4, 1, 1]
+    CAGE = [40, 40, 38, 38, 38, 6, 7, 11, 13]
     mouse_color = [(1, 0, 0),  # red
                    (0, 1, 0),  # green
                    (0, 0, 1),  # blue
@@ -51,7 +51,7 @@ def main():
     plt.xticks(np.arange(-1, 1, 0.1), fontsize=15)
     plt.yticks(np.arange(-1, 1, 0.1), fontsize=15)
 
-    # f0.show()
+    f0.show()
 
     ### P value Vs t value ###
     f, axx = plt.subplots(1, 2, sharex=True, sharey=True)
