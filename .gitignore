@@ -112,3 +112,4 @@ ENV/
 # Results folders
 work_data/
 *.tmp
+figures/~$esults.docx

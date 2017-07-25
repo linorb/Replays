@@ -34,7 +34,7 @@ def load_session_data(session_dir):
     events_filename = 'finalEventsMat.mat'
     traces_filename = 'finalTracesMat.mat'
     log_filename = 'frameLog.csv'
-    behavior_filename = 'my_mvmt.mat'
+    behavior_filename = 'my_mvmt_smooth.mat'
 
     all_events = matlab.load_events_file(os.path.join(session_dir,
                                                       events_filename))
@@ -425,7 +425,7 @@ def main():
             t_value[mouse_name]['t_before_after'].extend([stats])
             cohen_d[mouse_name]['d_before_after'].extend([d])
 
-    np.savez('L-shape_edge_statistics', p_value=p_value, t_value=t_value,
+    np.savez('Linear_edge_statistics', p_value=p_value, t_value=t_value,
              cohen_d=cohen_d)
 
     raw_input('press enter to quit')
