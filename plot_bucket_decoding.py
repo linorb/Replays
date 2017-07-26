@@ -1,58 +1,38 @@
 import numpy as np
 from matplotlib.pyplot import *
-from decode_bucket_trials import MOUSE, CAGE
+from decode_bucket_trials import MOUSE, CAGE, VELOCITY_THRESHOLD
 from plot_SCE_analysis import divide_to_boxes
 
 
 def main():
-    f1, axx1 = subplots(1, 2, sharey=True, sharex=True)
+    f1 = figure()
     ##### Plot decoding statistics ######
+    correct_decoding_A = []
+    correct_decoding_B = []
     for i, mouse in enumerate(MOUSE):
         npzfile = np.load(r'results\bucket_decoding_statistics_c%sm%s.npz'\
                           %(CAGE[i], mouse))
         correct_decoding_percentage = npzfile['correct_decoding_percentage']
-        p_val_correct = npzfile['p_val_correct']
-        edge_decoding_percentage = npzfile['edge_decoding_percentage']
-        p_val_edge = npzfile['p_val_edge']
 
-        # plot all bucket trials env A and B
-        axx1[0].plot(p_val_correct[0:28:4], correct_decoding_percentage[0:28:4],
-                     'ro') #A
-        axx1[0].plot(p_val_correct[1:28:4], correct_decoding_percentage[1:28:4],
-                     'bo') #B
-        axx1[0].plot(p_val_correct[2:28:4], correct_decoding_percentage[2:28:4],
-                     'ro') #A
-        axx1[0].plot(p_val_correct[3:28:4], correct_decoding_percentage[3:28:4],
-                     'bo') #B
+        correct_decoding_A.append(correct_decoding_percentage[0:28:4])
+        correct_decoding_A.append(correct_decoding_percentage[2:28:4])
+        correct_decoding_B.append(correct_decoding_percentage[1:28:4])
+        correct_decoding_B.append(correct_decoding_percentage[3:28:4])
 
-        axx1[1].plot(p_val_edge[0:28:4], edge_decoding_percentage[0:28:4],
-                     'ro')
-        axx1[1].plot(p_val_edge[1:28:4], edge_decoding_percentage[1:28:4],
-                     'bo')
-        axx1[1].plot(p_val_edge[2:28:4], edge_decoding_percentage[2:28:4],
-                     'ro')
-        axx1[1].plot(p_val_edge[3:28:4], edge_decoding_percentage[3:28:4],
-                     'bo')
+    correct_decoding_A = np.concatenate(correct_decoding_A)
+    correct_decoding_B = np.concatenate(correct_decoding_B)
 
-    axx1[0].set_ylim((-0.1, 1.1))
-    axx1[0].set_xlim((-0.1, 1.1))
-    axx1[0].set_title('P value Vs. correct decoding fraction', fontsize=18)
-    axx1[0].set_ylabel('correct decoding fraction', fontsize=16)
-    axx1[0].set_xlabel('P value', fontsize=16)
-    axx1[1].set_ylim((-0.1, 1.1))
-    axx1[1].set_xlim((-0.1, 1.1))
-    axx1[1].set_title('P value Vs. edge decoding fraction', fontsize=18)
-    axx1[1].set_ylabel('edge decoding fraction', fontsize=16)
-    axx1[1].set_xlabel('P value', fontsize=16)
-
-    for i in range(2):
-        for xtick, ytick in zip(axx1[i].xaxis.get_major_ticks(),
-                                axx1[i].yaxis.get_major_ticks()):
-            xtick.label.set_fontsize(15)
-            ytick.label.set_fontsize(15)
-
+    boxplot([correct_decoding_A, correct_decoding_B])
+    line1, = plot(np.arange(0, 3.5, 0.5), np.ones(7)*0.5, '--r',
+        label='Chance level')
+    xticks([1, 2], ['A', 'B'], fontsize=15)
+    yticks(fontsize=15)
+    ylim(0,1)
+    ylabel('Matched environment decoding fraction', fontsize=15)
+    legend(handles=[line1])
 
     f1.show()
+
 
     ###### Plot decoding histogram and number of events per bin decoding ######
 
@@ -90,22 +70,51 @@ def main():
          (number_of_events_per_frame_all_mice[env_B_indices],
           decoded_bins_all_mice[env_B_indices])
 
+    envA_bins = []
+    envB_bins = []
+    envA_velocity = []
+    envB_velocity = []
+    for i, mouse in enumerate(MOUSE):
+        npzfile = np.load(r'results\bins_velocity_c%sm%s.npz' \
+                          % (CAGE[i], mouse))
+        bins = npzfile['all_bins'].all()
+        velocity = npzfile['all_velocity'].all()
+        envA_bins.append(np.concatenate(bins['envA']))
+        envB_bins.append(np.concatenate(bins['envB']))
+        envA_velocity.append(np.concatenate(velocity['envA']))
+        envB_velocity.append(np.concatenate(velocity['envB']))
+
+    envA_bins = np.concatenate(envA_bins)
+    envB_bins = np.concatenate(envB_bins)
+    envA_velocity = np.concatenate(envA_velocity)
+    envB_velocity = np.concatenate(envB_velocity)
+
+
     axx2[0, 0].boxplot(box_data_A)
-    axx2[0, 0].set_ylim(0,20)
-    axx2[0, 0].set_xlabel('Decoded bin')
-    axx2[0, 0].set_ylabel('Number of events in frame')
-    axx2[0, 0].set_title('Linear track')
+    axx2[0, 0].set_ylim(0,35)
+    axx2[0, 0].set_ylabel('Number of events in frame', fontsize=18)
+    axx2[0, 0].set_title('Environment A', fontsize=18)
     axx2[0, 1].boxplot(box_data_B)
-    axx2[0, 1].set_xlabel('Decoded bin')
-    axx2[0, 1].set_ylabel('Number of events in frame')
-    axx2[0, 1].set_title('L-shape track')
-    axx2[1, 0].hist(decoded_bins_all_mice[env_A_indices], normed=True)
-    axx2[1, 0].set_xlabel('Decoded bin')
-    axx2[1, 0].set_ylabel('Probability of decoding')
-    axx2[1, 1].hist(decoded_bins_all_mice[env_B_indices], normed=True)
-    axx2[1, 1].set_xlabel('Decoded bin')
-    axx2[1, 1].set_ylabel('Probability of decoding')
+    axx2[0, 1].set_title('Environment B', fontsize=18)
+    axx2[1, 0].hist([decoded_bins_all_mice[env_A_indices],
+                     envA_bins[np.abs(envA_velocity) > VELOCITY_THRESHOLD]],
+                    normed=True, align='right')
+    axx2[1, 0].set_xlabel('Decoded bin', fontsize=18)
+    axx2[1, 0].set_ylabel('Probability', fontsize=18)
+    axx2[1, 1].hist([decoded_bins_all_mice[env_B_indices],
+                     envB_bins[np.abs(envB_velocity) > VELOCITY_THRESHOLD]],
+                    normed=True, align='right',label=
+                    ['decoded bins distribution','linear track occupancy'])
+    axx2[1, 1].set_xlabel('Decoded bin', fontsize=18)
     f2.suptitle('Bucket decoding', fontsize=18)
+    legend()
+    for i in range(2):
+        for j in range(2):
+            for xtick, ytick in zip(axx2[i, j].xaxis.get_major_ticks(),
+                                    axx2[i, j].yaxis.get_major_ticks()):
+               xtick.label.set_fontsize(15)
+               ytick.label.set_fontsize(15)
+
     f2.show()
 
     ############ Plot bin representation ###########
