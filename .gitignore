@@ -108,6 +108,7 @@ ENV/
 
 # PyCharm
 .idea/
+.pyc
 
 # Results folders
 work_data/
