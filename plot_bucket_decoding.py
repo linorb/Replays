@@ -1,8 +1,8 @@
 import numpy as np
+import scipy.stats as sio
 from matplotlib.pyplot import *
 from decode_bucket_trials import MOUSE, CAGE, VELOCITY_THRESHOLD
 from plot_SCE_analysis import divide_to_boxes
-
 
 def main():
     f1 = figure()
@@ -22,9 +22,30 @@ def main():
     correct_decoding_A = np.concatenate(correct_decoding_A)
     correct_decoding_B = np.concatenate(correct_decoding_B)
 
+    tA, probA = sio.ttest_1samp(correct_decoding_A, 0.5)
+    tB, probB = sio.ttest_1samp(correct_decoding_B, 0.5)
+
     boxplot([correct_decoding_A, correct_decoding_B])
     line1, = plot(np.arange(0, 3.5, 0.5), np.ones(7)*0.5, '--r',
         label='Chance level')
+    # plot significance star inspired from:
+    # https://stackoverflow.com/questions/33873176/how-to-add-significance-levels-on-bar-graph-using-pythons-matplotlib
+
+    pvals = [probA, probB]
+    max_value = np.max(np.concatenate([correct_decoding_A, correct_decoding_B]))
+    for i, p in enumerate(pvals):
+        if p >= 0.025:
+            displaystring = r'n.s.'
+        elif p < 0.0001:
+            displaystring = r'***'
+        elif p < 0.001:
+            displaystring = r'**'
+        else:
+            displaystring = r'*'
+
+        text(i+1, max_value + 0.1, displaystring, ha='center',
+                 va='center', bbox=dict(facecolor='1.', edgecolor='none'))
+
     xticks([1, 2], ['A', 'B'], fontsize=15)
     yticks(fontsize=15)
     ylim(0,1)
@@ -89,7 +110,10 @@ def main():
     envA_velocity = np.concatenate(envA_velocity)
     envB_velocity = np.concatenate(envB_velocity)
 
-
+    dA, pA = sio.ks_2samp(decoded_bins_all_mice[env_A_indices],
+                        envA_bins[np.abs(envA_velocity) > VELOCITY_THRESHOLD])
+    dB, pB = sio.ks_2samp(decoded_bins_all_mice[env_A_indices],
+                        envA_bins[np.abs(envA_velocity) > VELOCITY_THRESHOLD])
     axx2[0, 0].boxplot(box_data_A)
     axx2[0, 0].set_ylim(0,35)
     axx2[0, 0].set_ylabel('Number of events in frame', fontsize=18)
