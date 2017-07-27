@@ -9,36 +9,36 @@ from bambi.analysis import maximum_likelihood
 from zivlab.analysis.place_cells import find_place_cells
 
 # Linear track parameters
-FRAME_RATE = [20]*4
-FRAME_RATE.extend([10]*5) #Hz
-MOUSE = [4, 4, 1, 1, 6, 3, 6, 3, 0]
-CAGE = [6, 7, 11, 13, 40, 40, 38, 38, 38]
-ENV = [r'\envA']*4
-ENV.extend([r'\linear']*5)
-WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
-WORK_DIR.extend([r'D:\dev\replays\work_data\recall']*5)
+# FRAME_RATE = [20]*4
+# FRAME_RATE.extend([10]*5) #Hz
+# MOUSE = [4, 4, 1, 1, 6, 3, 6, 3, 0]
+# CAGE = [6, 7, 11, 13, 40, 40, 38, 38, 38]
+# ENV = [r'\envA']*4
+# ENV.extend([r'\linear']*5)
+# WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
+# WORK_DIR.extend([r'D:\dev\replays\work_data\recall']*5)
 
 
 # L-shape track parameters
-# FRAME_RATE = [20]*4 #Hz
-# MOUSE = [4, 4, 1, 1]
-# CAGE = [6, 7, 11, 13]
-# ENV= [r'\envB']*4
-# WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
+FRAME_RATE = [20]*4 #Hz
+MOUSE = [4, 4, 1, 1]
+CAGE = [6, 7, 11, 13]
+ENV= [r'\envB']*4
+WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
 
 EDGE_BINS = [0, 1, 10, 11]
 VELOCITY_THRESHOLD = 5
 NUMBER_OF_BINS = 24
 SPACE_BINNING = 2
 NUMBER_OF_PERMUTATIONS = 1
-FRAMES_TO_LOOK_BACK = 15
+FRAMES_TO_LOOK_BACK = 1
 MIN_NUMBER_OF_EVENTS = 15
 
 def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
     events_filename = 'fixedEventsMat.mat'
     log_filename = 'frameLog.csv'
-    behavior_filename = 'my_mvmt.mat'
+    behavior_filename = 'my_mvmt_smooth.mat'
 
     all_events = matlab.load_events_file(os.path.join(session_dir, events_filename))
     frame_log = matlab.load_frame_log_file(os.path.join(session_dir,log_filename))
@@ -157,7 +157,7 @@ def main():
             print 'loading data set for',CAGE[i], mouse, day
 
             # load the session data
-            session_dir = mouse_dir + '\%s\%s' %(day, ENV[i])
+            session_dir = mouse_dir + '\%s%s' %(day, ENV[i])
             session_ind = int(day[-1])-1
             events_traces, movement_data = \
                 load_session_data(session_dir, cell_registration, session_ind)
@@ -248,8 +248,8 @@ def main():
                                           %(CAGE[i], mouse, train_session_ind,
                                             test_session_ind, test_trial, float(mean_error_bins))
 
-                        plot_decoded_bins(estimated_bins, test_bins,
-                                          session_details)
+                        # plot_decoded_bins(estimated_bins, test_bins,
+                        #                   session_details)
 
                         mean_error_all_sessions \
                             [np.abs(train_session_ind - test_session_ind)]. \
@@ -299,17 +299,16 @@ def main():
                                              test_session_ind, test_trial,
                                              float(mean_error_bins))
 
-                        plot_decoded_bins(estimated_bins, test_bins,
-                                          session_details)
+                        # plot_decoded_bins(estimated_bins, test_bins,
+                        #                   session_details)
 
                         mean_error_all_sessions\
                         [np.abs(train_session_ind - test_session_ind)].\
                             append(mean_error_bins)
 
-        path_fig = r'C:\Users\Administrator\Documents\Lab notebook\figures\19-7-17\time lapse decoder\linear'
-        plot_mean_error(mean_error_all_sessions, 'C%sM%s' % (CAGE[i], mouse), path_fig)
-        raw_input('press enter')
-        close("all")
+        np.savez('Lshape_track_decoding_results_c%sm%s' % (CAGE[i], mouse), mean_error_all_sessions)
+        # raw_input('press enter')
+        # close("all")
 
 if __name__ == '__main__':
     main()
