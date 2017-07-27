@@ -113,3 +113,7 @@ ENV/
 work_data/
 *.tmp
 figures/~$esults.docx
+results/~$esults.docx
+figures/~$gures legend.docx
+*.tmp
+*.asv
