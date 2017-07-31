@@ -12,21 +12,21 @@ EDGE_BINS = [0, 1, 10, 11]
 VELOCITY_THRESHOLD = 5
 
 # Linear track parameters
-FRAME_RATE = [10]*5 #Hz
-FRAME_RATE.extend([20]*4)
-MOUSE = [3, 6, 6, 3, 0, 4, 4, 1, 1]
-CAGE = [40, 40, 38, 38, 38, 6, 7, 11, 13]
-ENV = [r'\linear']*5
-ENV.extend([r'\envA']*4)
-WORK_DIR = [r'D:\dev\replays\work_data\recall']*5
-WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
+# FRAME_RATE = [10]*5 #Hz
+# FRAME_RATE.extend([20]*4)
+# MOUSE = [3, 6, 6, 3, 0, 4, 4, 1, 1]
+# CAGE = [40, 40, 38, 38, 38, 6, 7, 11, 13]
+# ENV = [r'\linear']*5
+# ENV.extend([r'\envA']*4)
+# WORK_DIR = [r'D:\dev\replays\work_data\recall']*5
+# WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
 
 # L shape parameters
-# FRAME_RATE = [20]*4 #Hz
-# MOUSE = [4, 4, 1, 1]
-# CAGE = [6, 7, 11, 13]
-# ENV= [r'\envB']*4
-# WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
+FRAME_RATE = [20]*4 #Hz
+MOUSE = [4, 4, 1, 1]
+CAGE = [6, 7, 11, 13]
+ENV= [r'\envB']*4
+WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
 
 
 def load_session_data(session_dir):
@@ -332,7 +332,8 @@ def main():
     p_value = {}
     t_value = {}
     cohen_d = {}
-
+    p_edge_run ={}
+    p_edge_no_run = {}
     for i, mouse in enumerate(MOUSE):
 
         mouse_name = 'c%dm%d' %(CAGE[i], mouse)
@@ -345,6 +346,8 @@ def main():
         cohen_d[mouse_name] = {'d_before': [],
                                'd_after': [],
                                'd_before_after': []}
+        p_edge_run[mouse_name] = []
+        p_edge_no_run[mouse_name] = []
         mouse_dir = WORK_DIR[i] + '\c%dm%d' %(CAGE[i], mouse)
         days_list = [x[1] for x in os.walk(mouse_dir)][0]
         for day in days_list:
@@ -359,12 +362,12 @@ def main():
                                                             EDGE_BINS,
                                                             FRAME_RATE[i])
 
-            traces_segments_before = \
-                create_segments_for_run_epochs_and_edges_entire_session(traces,
-                                                            movement_data,
-                                                            'before', [0, 2],
-                                                            EDGE_BINS,
-                                                            FRAME_RATE[i])
+            # traces_segments_before = \
+            #     create_segments_for_run_epochs_and_edges_entire_session(traces,
+            #                                                 movement_data,
+            #                                                 'before', [0, 2],
+            #                                                 EDGE_BINS,
+            #                                                 FRAME_RATE[i])
             # plot_random_segment_activities(events_segments_before,
             #                                traces_segments_before,
             #                                10)
@@ -372,16 +375,18 @@ def main():
             p_edge_run_before, p_edge_non_run_before, _ = \
                 calculate_conditional_activity_probability(events_segments_before)
 
-            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_non_run_before,
-                                             axis=0, nan_policy='omit')
-
-            d = (np.nanmean(p_edge_run_before) - np.nanmean(p_edge_non_run_before)) /\
-                (np.sqrt((np.nanstd(p_edge_run_before) ** 2 +
-                          np.nanstd(p_edge_non_run_before) ** 2) / 2))
-
-            p_value[mouse_name]['p_before'].extend([p])
-            t_value[mouse_name]['t_before'].extend([stats])
-            cohen_d[mouse_name]['d_before'].extend([d])
+            p_edge_run[mouse_name].append(p_edge_run_before)
+            p_edge_no_run[mouse_name].append(p_edge_non_run_before)
+            # stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_non_run_before,
+            #                                  axis=0, nan_policy='omit')
+            #
+            # d = (np.nanmean(p_edge_run_before) - np.nanmean(p_edge_non_run_before)) /\
+            #     (np.sqrt((np.nanstd(p_edge_run_before) ** 2 +
+            #               np.nanstd(p_edge_non_run_before) ** 2) / 2))
+            #
+            # p_value[mouse_name]['p_before'].extend([p])
+            # t_value[mouse_name]['t_before'].extend([stats])
+            # cohen_d[mouse_name]['d_before'].extend([d])
 
             events_segments_after = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
@@ -389,12 +394,12 @@ def main():
                                                                 'after', [2, 4],
                                                                 EDGE_BINS,
                                                                 FRAME_RATE[i])
-            traces_segments_after = \
-                create_segments_for_run_epochs_and_edges_entire_session(traces,
-                                                                movement_data,
-                                                                'after', [2, 4],
-                                                                EDGE_BINS,
-                                                                FRAME_RATE[i])
+            # traces_segments_after = \
+            #     create_segments_for_run_epochs_and_edges_entire_session(traces,
+            #                                                     movement_data,
+            #                                                     'after', [2, 4],
+            #                                                     EDGE_BINS,
+            #                                                     FRAME_RATE[i])
             # plot_random_segment_activities(events_segments_after,
             #                                traces_segments_after,
             #                                10)
@@ -402,31 +407,36 @@ def main():
             p_edge_run_after, p_edge_non_run_after, _ = \
                 calculate_conditional_activity_probability(events_segments_after)
 
-            stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_non_run_after,
-                                             axis=0, nan_policy='omit')
+            p_edge_run[mouse_name].append(p_edge_run_after)
+            p_edge_no_run[mouse_name].append(p_edge_non_run_after)
 
-            d = (np.nanmean(p_edge_run_after) - np.nanmean(p_edge_non_run_after)) / \
-                (np.sqrt((np.nanstd(p_edge_run_after) ** 2 +
-                          np.nanstd(p_edge_non_run_after) ** 2) / 2))
+            # stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_non_run_after,
+            #                                  axis=0, nan_policy='omit')
+            #
+            # d = (np.nanmean(p_edge_run_after) - np.nanmean(p_edge_non_run_after)) / \
+            #     (np.sqrt((np.nanstd(p_edge_run_after) ** 2 +
+            #               np.nanstd(p_edge_non_run_after) ** 2) / 2))
+            #
+            # p_value[mouse_name]['p_after'].extend([p])
+            # t_value[mouse_name]['t_after'].extend([stats])
+            # cohen_d[mouse_name]['d_after'].extend([d])
+            #
+            # stats, p = scipy.stats.ttest_rel(p_edge_run_before,
+            #                                  p_edge_run_after, axis=0,
+            #                                  nan_policy='omit')
+            # d = (np.nanmean(p_edge_run_before) - np.nanmean(
+            #     p_edge_run_after)) / \
+            #     (np.sqrt((np.nanstd(p_edge_run_after) ** 2 +
+            #               np.nanstd(p_edge_run_before) ** 2) / 2))
+            #
+            # p_value[mouse_name]['p_before_after'].extend([p])
+            # t_value[mouse_name]['t_before_after'].extend([stats])
+            # cohen_d[mouse_name]['d_before_after'].extend([d])
 
-            p_value[mouse_name]['p_after'].extend([p])
-            t_value[mouse_name]['t_after'].extend([stats])
-            cohen_d[mouse_name]['d_after'].extend([d])
-
-            stats, p = scipy.stats.ttest_rel(p_edge_run_before,
-                                             p_edge_run_after, axis=0,
-                                             nan_policy='omit')
-            d = (np.nanmean(p_edge_run_before) - np.nanmean(
-                p_edge_run_after)) / \
-                (np.sqrt((np.nanstd(p_edge_run_after) ** 2 +
-                          np.nanstd(p_edge_run_before) ** 2) / 2))
-
-            p_value[mouse_name]['p_before_after'].extend([p])
-            t_value[mouse_name]['t_before_after'].extend([stats])
-            cohen_d[mouse_name]['d_before_after'].extend([d])
-
-    np.savez('Linear_edge_statistics', p_value=p_value, t_value=t_value,
-             cohen_d=cohen_d)
+    # np.savez('Linear_edge_statistics', p_value=p_value, t_value=t_value,
+    #          cohen_d=cohen_d)
+    np.savez('Lshape_edge_probability', p_edge_run=p_edge_run,
+             p_edge_no_run=p_edge_no_run)
 
     raw_input('press enter to quit')
 
