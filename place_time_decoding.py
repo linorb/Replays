@@ -7,6 +7,7 @@ from bambi.tools import matlab
 from bambi.tools.activity_loading import *
 from bambi.analysis import maximum_likelihood
 from zivlab.analysis.place_cells import find_place_cells
+from decode_bucket_trials import test_bucket_trial
 
 # Linear track parameters
 # FRAME_RATE = [20]*4
@@ -30,7 +31,7 @@ EDGE_BINS = [0, 1, 10, 11]
 VELOCITY_THRESHOLD = 5
 NUMBER_OF_BINS = 24
 SPACE_BINNING = 2
-NUMBER_OF_PERMUTATIONS = 1
+NUMBER_OF_PERMUTATIONS = 1000
 FRAMES_TO_LOOK_BACK = 1
 MIN_NUMBER_OF_EVENTS = 15
 
@@ -60,24 +61,21 @@ def count_edge_bins(bins, edge_bins):
 
     return number_of_edge_bins, edge_bins_mask
 
-def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin, edge_bins,
-                                               correct_decoding_percentage,
-                                         number_of_permutations, environment):
-    decoding_fraction = np.zeros((number_of_permutations))
-    edge_fraction = np.zeros((number_of_permutations))
+def calculate_p_val_for_mae(events, bins, p_neuron_bin,
+                            original_mae, number_of_permutations):
+    mae_permutation = np.zeros(number_of_permutations)
     for i in range(number_of_permutations):
         # shuffling neurons identities
         events_permutation = np.random.permutation(events)
-        statistics, decoded_bins, decoded_env =  test_bucket_trial(events_permutation, p_neuron_bin, edge_bins)
-        # plot_two_env_histogram(decoded_bins, decoded_env, 'random')
-        decoding_fraction[i] = (statistics[environment]['overall_decoding_fraction'])
-        edge_fraction[i] = (statistics[environment]['edge_decoding_fraction'])
+        decoded_bins, _ = decode_entire_trial \
+                            (events_permutation, p_neuron_bin,
+                             FRAMES_TO_LOOK_BACK)
+        active_frames = np.sum(events, axis=0) > 0
+        mae_permutation[i] = np.mean(np.abs(decoded_bins[active_frames]-
+                                             bins[active_frames]))
 
-    p_val = {}
-    p_val['overall_decoding_fraction'] = \
-        sum(decoding_fraction > correct_decoding_percentage['overall_decoding_fraction'])/np.float32(number_of_permutations)
-    p_val['edge_decoding_fraction'] = \
-        sum(edge_fraction > correct_decoding_percentage['edge_decoding_fraction'])/np.float32(number_of_permutations)
+    p_val =  \
+        sum(mae_permutation < original_mae)/np.float32(number_of_permutations)
 
     return p_val
 
@@ -195,6 +193,7 @@ def main():
         # sessions
 
         mean_error_all_sessions = [[] for j,_ in enumerate(days_list)]
+        pval_for_mean_error = [[] for j,_ in enumerate(days_list)]
         for train_session_ind, day in enumerate(days_list):
             print 'training on data set for', CAGE[i], mouse, day
             # Create p_neuron_bin with all session trials for testing with other
@@ -219,6 +218,7 @@ def main():
                 if test_session_ind == train_session_ind:
                     test_trials_indices = linear_trials_indices
                     for test_trial in test_trials_indices:
+                        print test_trial
                         train_trials_indices = range(len(train_events_traces))[1:-1]
                         train_trials_indices.remove(test_trial)
                         current_p_neuron_bin = create_p_neuron_bin(train_movement_data,
@@ -243,6 +243,12 @@ def main():
                         mean_error_bins = np.mean(np.abs((test_bins[active_frames] -
                                                     estimated_bins[
                                                         active_frames])))
+                        pval = calculate_p_val_for_mae(test_events[train_place_cells, :],
+                                                test_bins,
+                                                current_p_neuron_bin,
+                                                mean_error_bins,
+                                                NUMBER_OF_PERMUTATIONS)
+
                         session_details = 'C%sM%s - train session: %d, ' \
                                           'test session+trial: %d %d\n mean error: %d'\
                                           %(CAGE[i], mouse, train_session_ind,
@@ -254,6 +260,10 @@ def main():
                         mean_error_all_sessions \
                             [np.abs(train_session_ind - test_session_ind)]. \
                             append(mean_error_bins)
+                        pval_for_mean_error \
+                            [np.abs(train_session_ind - test_session_ind)]. \
+                            append(pval)
+
                 # The case below is for different sessions for training and testing
                 else:
                     test_movement_data = mouse_movement[test_session_ind]
@@ -293,8 +303,15 @@ def main():
                         active_frames = np.sum(test_events, axis=0) > 0
                         mean_error_bins = np.mean(np.abs((test_bins[active_frames] -
                                            estimated_bins[active_frames])))
+                        pval = calculate_p_val_for_mae(
+                            test_events[shared_place_cells, :],
+                            test_bins,
+                            current_p_neuron_bin,
+                            mean_error_bins,
+                            NUMBER_OF_PERMUTATIONS)
+
                         session_details = 'C%sM%s - train session: %d, ' \
-                                          'test session+trial: %d %d\n mean error: %f' \
+                                          'test session+trial: %d %d\n mean error: %d' \
                                           % (CAGE[i], mouse, train_session_ind,
                                              test_session_ind, test_trial,
                                              float(mean_error_bins))
@@ -302,11 +319,24 @@ def main():
                         # plot_decoded_bins(estimated_bins, test_bins,
                         #                   session_details)
 
+                        mean_error_all_sessions \
+                            [np.abs(train_session_ind - test_session_ind)]. \
+                            append(mean_error_bins)
+                        pval_for_mean_error \
+                            [np.abs(train_session_ind - test_session_ind)]. \
+                            append(pval)
+
                         mean_error_all_sessions\
                         [np.abs(train_session_ind - test_session_ind)].\
                             append(mean_error_bins)
 
-        np.savez('Lshape_track_decoding_results_c%sm%s' % (CAGE[i], mouse), mean_error_all_sessions)
+        np.savez('linear_track_decoding_results_c%sm%s' % (CAGE[i], mouse),
+                 mean_error_all_sessions=mean_error_all_sessions,
+                 pval_for_mean_error=pval_for_mean_error)
+
+        # np.savez('Lshape_track_decoding_results_c%sm%s' % (CAGE[i], mouse),
+        #          mean_error_all_sessions=mean_error_all_sessions,
+        #          pval_for_mean_error=pval_for_mean_error)
         # raw_input('press enter')
         # close("all")
 
