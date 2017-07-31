@@ -134,6 +134,7 @@ def main():
     legend()
     for i in range(2):
         for j in range(2):
+            axx2[i,j].set_aspect('equal', 'datalim')
             for xtick, ytick in zip(axx2[i, j].xaxis.get_major_ticks(),
                                     axx2[i, j].yaxis.get_major_ticks()):
                xtick.label.set_fontsize(15)
