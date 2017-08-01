@@ -330,13 +330,13 @@ def main():
                         [np.abs(train_session_ind - test_session_ind)].\
                             append(mean_error_bins)
 
-        np.savez('linear_track_decoding_results_c%sm%s' % (CAGE[i], mouse),
-                 mean_error_all_sessions=mean_error_all_sessions,
-                 pval_for_mean_error=pval_for_mean_error)
-
-        # np.savez('Lshape_track_decoding_results_c%sm%s' % (CAGE[i], mouse),
+        # np.savez('linear_track_decoding_results_c%sm%s' % (CAGE[i], mouse),
         #          mean_error_all_sessions=mean_error_all_sessions,
         #          pval_for_mean_error=pval_for_mean_error)
+
+        np.savez('Lshape_track_decoding_results_c%sm%s' % (CAGE[i], mouse),
+                 mean_error_all_sessions=mean_error_all_sessions,
+                 pval_for_mean_error=pval_for_mean_error)
         # raw_input('press enter')
         # close("all")
 
