@@ -240,9 +240,9 @@ def main():
         edge_decoding_percentage = []
         p_val_correct = []
         p_val_edge = []
-        decoded_bins_all_sessions = []
-        decoded_env_all_sessions = []
-        number_of_events_per_frame_all_sessions = []
+        decoded_bins_all_sessions = {'envA': [], 'envB': []}
+        decoded_env_all_sessions = {'envA': [], 'envB': []}
+        number_of_events_per_frame_all_sessions = {'envA': [], 'envB': []}
         all_bins = {'envA': [], 'envB': []}
         all_velocity = {'envA': [], 'envB': []}
         cell_reg_filename = WORK_DIR + '\c%dm%d\cellRegisteredFixed.mat' \
@@ -348,23 +348,23 @@ def main():
                 number_of_events_per_frame = \
                     number_of_events_per_frame[number_of_events_per_frame > 0]
 
-                decoded_bins_all_sessions.append(decoded_bins)
-                decoded_env_all_sessions.append(decoded_env)
-                number_of_events_per_frame_all_sessions.append\
+                decoded_bins_all_sessions['envA'].append(decoded_bins)
+                decoded_env_all_sessions['envA'].append(decoded_env)
+                number_of_events_per_frame_all_sessions['envA'].append\
                     (number_of_events_per_frame)
 
-                correct_decoding_percentage.append\
-                    (statistics['envA']['overall_decoding_fraction'])
-
-                edge_decoding_percentage.append\
-                    (statistics['envA']['edge_decoding_fraction'])
-
-                p_val = calculate_p_val_for_correct_decoding_trial\
-                    (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envA'],
-                    NUMBER_OF_PERMUTATIONS, 'envA')
-
-                p_val_correct.append(p_val['overall_decoding_fraction'])
-                p_val_edge.append(p_val['edge_decoding_fraction'])
+                # correct_decoding_percentage.append\
+                #     (statistics['envA']['overall_decoding_fraction'])
+                #
+                # edge_decoding_percentage.append\
+                #     (statistics['envA']['edge_decoding_fraction'])
+                #
+                # p_val = calculate_p_val_for_correct_decoding_trial\
+                #     (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envA'],
+                #     NUMBER_OF_PERMUTATIONS, 'envA')
+                #
+                # p_val_correct.append(p_val['overall_decoding_fraction'])
+                # p_val_edge.append(p_val['edge_decoding_fraction'])
 
                 trial_events_B = events_tracesB[bucket_trials_indicesB[trial]]\
                     [place_cells, :]
@@ -376,29 +376,29 @@ def main():
                 number_of_events_per_frame = \
                     number_of_events_per_frame[number_of_events_per_frame > 0]
 
-                decoded_bins_all_sessions.append(decoded_bins)
-                decoded_env_all_sessions.append(decoded_env)
-                number_of_events_per_frame_all_sessions.append \
+                decoded_bins_all_sessions['envB'].append(decoded_bins)
+                decoded_env_all_sessions['envB'].append(decoded_env)
+                number_of_events_per_frame_all_sessions['envB'].append \
                     (number_of_events_per_frame)
 
-                correct_decoding_percentage.append\
-                    (statistics['envB']['overall_decoding_fraction'])
+                # correct_decoding_percentage.append\
+                #     (statistics['envB']['overall_decoding_fraction'])
+                #
+                # edge_decoding_percentage.append\
+                #     (statistics['envB']['edge_decoding_fraction'])
+                #
+                # p_val = calculate_p_val_for_correct_decoding_trial\
+                #     (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envB'],
+                #      NUMBER_OF_PERMUTATIONS, 'envB')
+                #
+                # p_val_correct.append(p_val['overall_decoding_fraction'])
+                # p_val_edge.append(p_val['edge_decoding_fraction'])
 
-                edge_decoding_percentage.append\
-                    (statistics['envB']['edge_decoding_fraction'])
-
-                p_val = calculate_p_val_for_correct_decoding_trial\
-                    (trial_events_A, p_neuron_bin, EDGE_BINS, statistics['envB'],
-                     NUMBER_OF_PERMUTATIONS, 'envB')
-
-                p_val_correct.append(p_val['overall_decoding_fraction'])
-                p_val_edge.append(p_val['edge_decoding_fraction'])
-
-        np.savez('bucket_decoding_statistics_c%sm%s' %(CAGE[i], mouse),
-                 correct_decoding_percentage = correct_decoding_percentage,
-                 edge_decoding_percentage = edge_decoding_percentage,
-                 p_val_correct = p_val_correct,
-                 p_val_edge = p_val_edge)
+        # np.savez('bucket_decoding_statistics_c%sm%s' %(CAGE[i], mouse),
+        #          correct_decoding_percentage = correct_decoding_percentage,
+        #          edge_decoding_percentage = edge_decoding_percentage,
+        #          p_val_correct = p_val_correct,
+        #          p_val_edge = p_val_edge)
 
         np.savez('bucket_decoding_results_c%sm%s' % (CAGE[i], mouse),
                  decoded_bins_all_sessions=decoded_bins_all_sessions,
@@ -406,11 +406,11 @@ def main():
                  number_of_events_per_frame_all_sessions=
                  number_of_events_per_frame_all_sessions)
 
-        np.savez('bins_velocity_c%sm%s' % (CAGE[i], mouse), all_bins=all_bins,
-                 all_velocity=all_velocity)
-
-        np.savez('p_neuron_bin_c%sm%s' % (CAGE[i], mouse),
-                 p_neuron_bin=p_neuron_bin)
+        # np.savez('bins_velocity_c%sm%s' % (CAGE[i], mouse), all_bins=all_bins,
+        #          all_velocity=all_velocity)
+        #
+        # np.savez('p_neuron_bin_c%sm%s' % (CAGE[i], mouse),
+        #          p_neuron_bin=p_neuron_bin)
 
         # f1, axx1 = subplots(1, 2, sharey=True, sharex=True)
         # axx1[0].plot(p_val_correct[0:28:4], correct_decoding_percentage[0:28:4],
