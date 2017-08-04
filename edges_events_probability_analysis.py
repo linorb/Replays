@@ -34,7 +34,10 @@ def load_session_data(session_dir):
     events_filename = 'finalEventsMat.mat'
     traces_filename = 'finalTracesMat.mat'
     log_filename = 'frameLog.csv'
-    behavior_filename = 'my_mvmt_smooth.mat'
+    if 'envB' in session_dir:
+        behavior_filename = 'my_mvmt_fixed.mat'
+    else: # envA or linear
+        behavior_filename = 'my_mvmt_smooth.mat'
 
     all_events = matlab.load_events_file(os.path.join(session_dir,
                                                       events_filename))
@@ -377,16 +380,16 @@ def main():
 
             p_edge_run[mouse_name].append(p_edge_run_before)
             p_edge_no_run[mouse_name].append(p_edge_non_run_before)
-            # stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_non_run_before,
-            #                                  axis=0, nan_policy='omit')
-            #
-            # d = (np.nanmean(p_edge_run_before) - np.nanmean(p_edge_non_run_before)) /\
-            #     (np.sqrt((np.nanstd(p_edge_run_before) ** 2 +
-            #               np.nanstd(p_edge_non_run_before) ** 2) / 2))
-            #
-            # p_value[mouse_name]['p_before'].extend([p])
-            # t_value[mouse_name]['t_before'].extend([stats])
-            # cohen_d[mouse_name]['d_before'].extend([d])
+            stats, p = scipy.stats.ttest_rel(p_edge_run_before, p_edge_non_run_before,
+                                             axis=0, nan_policy='omit')
+
+            d = (np.nanmean(p_edge_run_before) - np.nanmean(p_edge_non_run_before)) /\
+                (np.sqrt((np.nanstd(p_edge_run_before) ** 2 +
+                          np.nanstd(p_edge_non_run_before) ** 2) / 2))
+
+            p_value[mouse_name]['p_before'].extend([p])
+            t_value[mouse_name]['t_before'].extend([stats])
+            cohen_d[mouse_name]['d_before'].extend([d])
 
             events_segments_after = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
@@ -410,31 +413,31 @@ def main():
             p_edge_run[mouse_name].append(p_edge_run_after)
             p_edge_no_run[mouse_name].append(p_edge_non_run_after)
 
-            # stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_non_run_after,
-            #                                  axis=0, nan_policy='omit')
-            #
-            # d = (np.nanmean(p_edge_run_after) - np.nanmean(p_edge_non_run_after)) / \
-            #     (np.sqrt((np.nanstd(p_edge_run_after) ** 2 +
-            #               np.nanstd(p_edge_non_run_after) ** 2) / 2))
-            #
-            # p_value[mouse_name]['p_after'].extend([p])
-            # t_value[mouse_name]['t_after'].extend([stats])
-            # cohen_d[mouse_name]['d_after'].extend([d])
-            #
-            # stats, p = scipy.stats.ttest_rel(p_edge_run_before,
-            #                                  p_edge_run_after, axis=0,
-            #                                  nan_policy='omit')
-            # d = (np.nanmean(p_edge_run_before) - np.nanmean(
-            #     p_edge_run_after)) / \
-            #     (np.sqrt((np.nanstd(p_edge_run_after) ** 2 +
-            #               np.nanstd(p_edge_run_before) ** 2) / 2))
-            #
-            # p_value[mouse_name]['p_before_after'].extend([p])
-            # t_value[mouse_name]['t_before_after'].extend([stats])
-            # cohen_d[mouse_name]['d_before_after'].extend([d])
+            stats, p = scipy.stats.ttest_rel(p_edge_run_after, p_edge_non_run_after,
+                                             axis=0, nan_policy='omit')
 
-    # np.savez('Linear_edge_statistics', p_value=p_value, t_value=t_value,
-    #          cohen_d=cohen_d)
+            d = (np.nanmean(p_edge_run_after) - np.nanmean(p_edge_non_run_after)) / \
+                (np.sqrt((np.nanstd(p_edge_run_after) ** 2 +
+                          np.nanstd(p_edge_non_run_after) ** 2) / 2))
+
+            p_value[mouse_name]['p_after'].extend([p])
+            t_value[mouse_name]['t_after'].extend([stats])
+            cohen_d[mouse_name]['d_after'].extend([d])
+
+            stats, p = scipy.stats.ttest_rel(p_edge_run_before,
+                                             p_edge_run_after, axis=0,
+                                             nan_policy='omit')
+            d = (np.nanmean(p_edge_run_before) - np.nanmean(
+                p_edge_run_after)) / \
+                (np.sqrt((np.nanstd(p_edge_run_after) ** 2 +
+                          np.nanstd(p_edge_run_before) ** 2) / 2))
+
+            p_value[mouse_name]['p_before_after'].extend([p])
+            t_value[mouse_name]['t_before_after'].extend([stats])
+            cohen_d[mouse_name]['d_before_after'].extend([d])
+
+    np.savez('Lshape_edge_statistics', p_value=p_value, t_value=t_value,
+             cohen_d=cohen_d)
     np.savez('Lshape_edge_probability', p_edge_run=p_edge_run,
              p_edge_no_run=p_edge_no_run)
 

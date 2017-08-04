@@ -86,7 +86,7 @@ def main():
     ######### For L-shape track #########:
 
     ### Load the data ###
-    filename = r'results\L-shape_edge_statistics.npz'
+    filename = r'results\Lshape_edge_statistics.npz'
     npzfile = np.load(filename)
     p_value = npzfile['p_value'].all()
     t_value = npzfile['t_value'].all()
