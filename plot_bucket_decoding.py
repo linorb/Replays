@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.stats as sio
 from matplotlib.pyplot import *
+from matplotlib import cm
 from decode_bucket_trials import MOUSE, CAGE, VELOCITY_THRESHOLD
 from plot_SCE_analysis import divide_to_boxes
 
@@ -33,7 +34,7 @@ def main():
     correct_decoding_A = []
     correct_decoding_B = []
     for i, mouse in enumerate(MOUSE):
-        npzfile = np.load(r'results\bucket_decoding_statistics_c%sm%s.npz'\
+        npzfile = np.load(r'result\sbucket_decoding_results_c%sm%s.npz'\
                           %(CAGE[i], mouse))
         correct_decoding_percentage = npzfile['correct_decoding_percentage']
 
@@ -57,7 +58,7 @@ def main():
     pvals = [probA, probB]
     max_value = np.max(np.concatenate([correct_decoding_A, correct_decoding_B]))
     for i, p in enumerate(pvals):
-        if p >= 0.025:
+        if p >= 0.1:
             displaystring = r'n.s.'
         elif p < 0.0001:
             displaystring = r'***'
@@ -204,66 +205,88 @@ def main():
 
     ############ Plot bin representation ###########
     f2, axx2 = subplots(3, 2, sharex='row', sharey='row')
-    # p_neuron_bin_all =  {'envB_negative': [],
-    #                      'envA_negative': [],
-    #                      'envB_positive': [],
-    #                      'envA_positive': []}
-    # for i, mouse in enumerate(MOUSE):
-    #     npzfile = np.load(r'results\p_neuron_bin_c%sm%s.npz' \
-    #                       % (CAGE[i], mouse))
-    #     p_neuron_bin = npzfile['p_neuron_bin'].all()
-    #     # Plot the histogram of the place fields per bin for all neurons.
-    #     # separating environments and directions
-    #     p_neuron_bin_all['envB_negative'].append(
-    #         p_neuron_bin['envB_negative'][0])
-    #     p_neuron_bin_all['envA_negative'].append(
-    #         p_neuron_bin['envA_negative'][0])
-    #     p_neuron_bin_all['envB_positive'].append(
-    #         p_neuron_bin['envB_positive'][0])
-    #     p_neuron_bin_all['envA_positive'].append(
-    #         p_neuron_bin['envA_positive'][0])
-    #
-    # p_neuron_bin_all['envB_negative'] = np.vstack(
-    #     p_neuron_bin_all['envB_negative'])
-    # p_neuron_bin_all['envA_negative'] = np.vstack(
-    #     p_neuron_bin_all['envA_negative'])
-    # p_neuron_bin_all['envB_positive'] = np.vstack(
-    #     p_neuron_bin_all['envB_positive'])
-    # p_neuron_bin_all['envA_positive'] = np.vstack(
-    #     p_neuron_bin_all['envA_positive'])
-    #
-    # axx2[0, 0].hist(np.argmax(p_neuron_bin_all['envB_negative'], axis=1))
-    # axx2[0, 0].set_title('L-shape negative speed')
-    # axx2[0, 0].set_ylabel('# cells with place field', fontsize=15)
-    # axx2[0, 1].hist(np.argmax(p_neuron_bin_all['envA_negative'], axis=1))
-    # axx2[0, 1].set_title('Linear negative speed')
-    # axx2[1, 0].hist(np.argmax(p_neuron_bin_all['envB_positive'], axis=1))
-    # axx2[1, 0].set_title('L-shape positive speed')
-    # axx2[1, 0].set_ylabel('# cells with place field', fontsize=15)
-    # axx2[1, 1].hist(np.argmax(p_neuron_bin_all['envA_positive'], axis=1))
-    # axx2[1, 1].set_title('Linear positive speed')
-    # axx2[1, 1].set_title('L-shape negative speed')
-    # f2.suptitle('P(neuron activation|bin) all mice')
-    #
-    #     # indices = np.argsort(np.argmax(p_neuron_bin['envB_negative'][0], axis=1))
-    #     # axx2[0, 0].imshow(p_neuron_bin['envB_negative'][0][indices, :],
-    #     #                   interpolation='none', aspect='auto')
-    #     # axx2[0, 0].set_title('L-shape negative speed')
-    #     # indices = np.argsort(np.argmax(p_neuron_bin['envA_negative'][0], axis=1))
-    #     # axx2[0, 1].imshow(p_neuron_bin['envA_negative'][0][indices , :],
-    #     #                   interpolation='none', aspect='auto')
-    #     # axx2[0, 1].set_title('Linear negative speed')
-    #     # indices = np.argsort(np.argmax(p_neuron_bin['envB_positive'][0], axis=1))
-    #     # axx2[1, 0].imshow(p_neuron_bin['envB_positive'][0][indices, :],
-    #     #                   interpolation='none', aspect='auto')
-    #     # axx2[1, 0].set_title('L-shape positive speed')
-    #     # indices = np.argsort(np.argmax(p_neuron_bin['envA_positive'][0], axis=1))
-    #     # axx2[1, 1].imshow(p_neuron_bin['envA_positive'][0][indices, :],
-    #     #                   interpolation='none', aspect='auto')
-    #     # axx2[1, 1].set_title('Linear positive speed')
-    #     # f2.suptitle('P(neuron activation|bin) C%sM%s' % (CAGE[i], mouse))
-    # f2.show()
-    #
+    p_neuron_bin_all =  {'envB_negative': [],
+                         'envA_negative': [],
+                         'envB_positive': [],
+                         'envA_positive': []}
+    for i, mouse in enumerate(MOUSE):
+        npzfile = np.load(r'results\p_neuron_bin_c%sm%s.npz' \
+                          % (CAGE[i], mouse))
+        p_neuron_bin = npzfile['p_neuron_bin'].all()
+        # Plot the histogram of the place fields per bin for all neurons.
+        # separating environments and directions
+        p_neuron_bin_all['envB_negative'].append(
+            p_neuron_bin['envB_negative'][0])
+        p_neuron_bin_all['envA_negative'].append(
+            p_neuron_bin['envA_negative'][0])
+        p_neuron_bin_all['envB_positive'].append(
+            p_neuron_bin['envB_positive'][0])
+        p_neuron_bin_all['envA_positive'].append(
+            p_neuron_bin['envA_positive'][0])
+
+        f0, axx0 = subplots(3, 2, sharex='row', sharey='row')
+        # axx0[0, 0].hist(np.argmax(p_neuron_bin['envB_negative'][0], axis=1))
+        # axx0[0, 0].set_title('L-shape negative speed')
+        # axx0[0, 0].set_ylabel('# cells with place field', fontsize=15)
+        # axx0[0, 1].hist(np.argmax(p_neuron_bin['envA_negative'][0], axis=1))
+        # axx0[0, 1].set_title('Linear negative speed')
+        # axx0[1, 0].hist(np.argmax(p_neuron_bin['envB_positive'][0], axis=1))
+        # axx0[1, 0].set_title('L-shape positive speed')
+        # axx0[1, 0].set_ylabel('# cells with place field', fontsize=15)
+        # axx0[1, 1].hist(np.argmax(p_neuron_bin['envA_positive'][0], axis=1))
+        # axx0[1, 1].set_title('Linear positive speed')
+        # axx0[1, 1].set_title('L-shape negative speed')
+        # f0.suptitle('c%sm%s'% (CAGE[i], mouse))
+        # f0.show()
+
+        indices = np.argsort(
+            np.argmax(p_neuron_bin['envB_negative'][0], axis=1))
+        cax = axx0[0, 0].imshow(p_neuron_bin['envB_negative'][0][indices, :],
+                          interpolation='none', aspect='auto', cmap=cm.viridis)
+        axx0[0, 0].set_title('L-shape negative speed')
+        indices = np.argsort(
+            np.argmax(p_neuron_bin['envA_negative'][0], axis=1))
+        axx0[0, 1].imshow(p_neuron_bin['envA_negative'][0][indices, :],
+                          interpolation='none', aspect='auto', cmap=cm.viridis)
+        axx0[0, 1].set_title('Linear negative speed')
+        indices = np.argsort(
+            np.argmax(p_neuron_bin['envB_positive'][0], axis=1))
+        axx0[1, 0].imshow(p_neuron_bin['envB_positive'][0][indices, :],
+                          interpolation='none', aspect='auto', cmap=cm.viridis)
+        axx0[1, 0].set_title('L-shape positive speed')
+        indices = np.argsort(
+            np.argmax(p_neuron_bin['envA_positive'][0], axis=1))
+        axx0[1, 1].imshow(p_neuron_bin['envA_positive'][0][indices, :],
+                          interpolation='none', aspect='auto', cmap=cm.viridis)
+        f0.colorbar(cax)
+        axx0[1, 1].set_title('Linear positive speed')
+        f0.suptitle('P(neuron activation|bin) C%sM%s' % (CAGE[i], mouse))
+        f0.show()
+
+    p_neuron_bin_all['envB_negative'] = np.vstack(
+        p_neuron_bin_all['envB_negative'])
+    p_neuron_bin_all['envA_negative'] = np.vstack(
+        p_neuron_bin_all['envA_negative'])
+    p_neuron_bin_all['envB_positive'] = np.vstack(
+        p_neuron_bin_all['envB_positive'])
+    p_neuron_bin_all['envA_positive'] = np.vstack(
+        p_neuron_bin_all['envA_positive'])
+
+    axx2[0, 0].hist(np.argmax(p_neuron_bin_all['envB_negative'], axis=1))
+    axx2[0, 0].set_title('L-shape negative speed')
+    axx2[0, 0].set_ylabel('# cells with place field', fontsize=15)
+    axx2[0, 1].hist(np.argmax(p_neuron_bin_all['envA_negative'], axis=1))
+    axx2[0, 1].set_title('Linear negative speed')
+    axx2[1, 0].hist(np.argmax(p_neuron_bin_all['envB_positive'], axis=1))
+    axx2[1, 0].set_title('L-shape positive speed')
+    axx2[1, 0].set_ylabel('# cells with place field', fontsize=15)
+    axx2[1, 1].hist(np.argmax(p_neuron_bin_all['envA_positive'], axis=1))
+    axx2[1, 1].set_title('Linear positive speed')
+    axx2[1, 1].set_title('L-shape negative speed')
+    f2.suptitle('P(neuron activation|bin) all mice')
+
+    f2.show()
+
     # envA_bins = []
     # envB_bins = []
     # envA_velocity = []

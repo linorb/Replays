@@ -15,7 +15,7 @@ CAGE = [6, 7, 11, 13]
 ENV = ['envA', 'envB']
 DAYS = '1234567'
 WORK_DIR = r'D:\dev\replays\work_data\two_environments'
-VELOCITY_THRESHOLD = 5
+VELOCITY_THRESHOLD = 3
 NUMBER_OF_BINS = 24
 SPACE_BINNING = 2
 NUMBER_OF_PERMUTATIONS = 1000
@@ -24,7 +24,11 @@ def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
     events_filename = 'finalEventsMat.mat'
     log_filename = 'frameLog.csv'
-    behavior_filename = 'my_mvmt_smooth.mat'
+    if 'envA' in session_dir:
+        behavior_filename = 'my_mvmt_smooth.mat'
+    else: # envB
+        behavior_filename = 'my_mvmt_fixed.mat'
+        print behavior_filename
 
     all_events = matlab.load_events_file(os.path.join(session_dir, events_filename))
     frame_log = matlab.load_frame_log_file(os.path.join(session_dir,log_filename))
@@ -319,23 +323,22 @@ def main():
             # dividing into two directions - positive, negative
             p_neuron_binA_positive = maximum_likelihood.calculate_p_r_s_matrix\
                 (binsA[velocityA > VELOCITY_THRESHOLD],
-                 eventsA[place_cells, :][:, velocityA >0])
-
+                 eventsA[place_cells, :][:, velocityA >VELOCITY_THRESHOLD])
             p_neuron_bin['envA_positive'] = [p_neuron_binA_positive]
+
             p_neuron_binA_negative = maximum_likelihood.calculate_p_r_s_matrix\
                 (binsA[velocityA < -VELOCITY_THRESHOLD],
-                 eventsA[place_cells, :][:, velocityA < 0])
-
+                 eventsA[place_cells, :][:, velocityA < -VELOCITY_THRESHOLD])
             p_neuron_bin['envA_negative'] = [p_neuron_binA_negative]
+
             p_neuron_binB_positive = maximum_likelihood.calculate_p_r_s_matrix\
                 (binsB[velocityB > VELOCITY_THRESHOLD],
-                 eventsB[place_cells, :][:, velocityB > 0])
-
+                 eventsB[place_cells, :][:, velocityB > VELOCITY_THRESHOLD])
             p_neuron_bin['envB_positive'] = [p_neuron_binB_positive]
+
             p_neuron_binB_negative = maximum_likelihood.calculate_p_r_s_matrix\
                 (binsB[velocityB < -VELOCITY_THRESHOLD],
-                 eventsB[place_cells, :][:, velocityB < 0])
-
+                 eventsB[place_cells, :][:, velocityB < -VELOCITY_THRESHOLD])
             p_neuron_bin['envB_negative'] = [p_neuron_binB_negative]
 
             for trial in range(2):
@@ -353,8 +356,8 @@ def main():
                 number_of_events_per_frame_all_sessions['envA'].append\
                     (number_of_events_per_frame)
 
-                # correct_decoding_percentage.append\
-                #     (statistics['envA']['overall_decoding_fraction'])
+                correct_decoding_percentage.append\
+                    (statistics['envA']['overall_decoding_fraction'])
                 #
                 # edge_decoding_percentage.append\
                 #     (statistics['envA']['edge_decoding_fraction'])
@@ -381,8 +384,8 @@ def main():
                 number_of_events_per_frame_all_sessions['envB'].append \
                     (number_of_events_per_frame)
 
-                # correct_decoding_percentage.append\
-                #     (statistics['envB']['overall_decoding_fraction'])
+                correct_decoding_percentage.append\
+                    (statistics['envB']['overall_decoding_fraction'])
                 #
                 # edge_decoding_percentage.append\
                 #     (statistics['envB']['edge_decoding_fraction'])
@@ -401,52 +404,18 @@ def main():
         #          p_val_edge = p_val_edge)
 
         np.savez('bucket_decoding_results_c%sm%s' % (CAGE[i], mouse),
+                 correct_decoding_percentage = correct_decoding_percentage,
                  decoded_bins_all_sessions=decoded_bins_all_sessions,
                  decoded_env_all_sessions=decoded_env_all_sessions,
                  number_of_events_per_frame_all_sessions=
                  number_of_events_per_frame_all_sessions)
 
-        # np.savez('bins_velocity_c%sm%s' % (CAGE[i], mouse), all_bins=all_bins,
-        #          all_velocity=all_velocity)
+        np.savez('bins_velocity_c%sm%s' % (CAGE[i], mouse), all_bins=all_bins,
+                 all_velocity=all_velocity)
         #
-        # np.savez('p_neuron_bin_c%sm%s' % (CAGE[i], mouse),
-        #          p_neuron_bin=p_neuron_bin)
+        np.savez('p_neuron_bin_c%sm%s' % (CAGE[i], mouse),
+                 p_neuron_bin=p_neuron_bin)
 
-        # f1, axx1 = subplots(1, 2, sharey=True, sharex=True)
-        # axx1[0].plot(p_val_correct[0:28:4], correct_decoding_percentage[0:28:4],
-        #              'ro', label='A first')
-        # axx1[0].plot(p_val_correct[1:28:4], correct_decoding_percentage[1:28:4],
-        #              'bo', label='B first')
-        # axx1[0].plot(p_val_correct[2:28:4], correct_decoding_percentage[2:28:4],
-        #              'go', label='A last')
-        # axx1[0].plot(p_val_correct[3:28:4], correct_decoding_percentage[3:28:4],
-        #              'ko', label='B last')
-        # axx1[0].set_ylim((-0.1, 1.1))
-        # axx1[0].set_xlim((-0.1, 1.1))
-        # axx1[0].set_title(
-        #     'P value Vs. correct decoding fraction c%sm%s' % (CAGE[i], mouse))
-        # axx1[0].set_ylabel('correct decoding fraction')
-        # axx1[0].set_xlabel('P value')
-        # axx1[0].legend(loc="upper right")
-        #
-        # axx1[1].plot(p_val_edge[0:28:4], edge_decoding_percentage[0:28:4], 'ro',
-        #              label='A first')
-        # axx1[1].plot(p_val_edge[1:28:4], edge_decoding_percentage[1:28:4], 'bo',
-        #              label='B first')
-        # axx1[1].plot(p_val_edge[2:28:4], edge_decoding_percentage[2:28:4], 'go',
-        #              label='A last')
-        # axx1[1].plot(p_val_edge[3:28:4], edge_decoding_percentage[3:28:4], 'ko',
-        #              label='B last')
-        # axx1[1].set_ylim((-0.1, 1.1))
-        # axx1[1].set_xlim((-0.1, 1.1))
-        # axx1[1].set_title(
-        #     'P value Vs. edge decoding fraction c%sm%s' % (CAGE[i], mouse))
-        # axx1[1].set_ylabel('edge decoding fraction')
-        # axx1[1].set_xlabel('P value')
-        # axx1[1].legend(loc="upper right")
-        #
-        # f1.show()
-        #
     raw_input('press enter')
 
 if __name__ == '__main__':
