@@ -8,10 +8,26 @@ import matplotlib.gridspec as gridspec
 
 from edges_events_probability_analysis import \
     create_segments_for_run_epochs_and_edges_entire_session,\
-    load_session_data,\
-    EDGE_BINS, MOUSE, CAGE, ENV, WORK_DIR, FRAME_RATE
+    load_session_data,EDGE_BINS
 
 from bambi.tools.activity_loading import decode_entire_trial
+
+# Linear track parameters
+FRAME_RATE = [10]*5 #Hz
+FRAME_RATE.extend([20]*4)
+MOUSE = [3, 6, 6, 3, 0, 4, 4, 1, 1]
+CAGE = [40, 40, 38, 38, 38, 6, 7, 11, 13]
+ENV = [r'\linear']*5
+ENV.extend([r'\envA']*4)
+WORK_DIR = [r'D:\dev\replays\work_data\recall']*5
+WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
+
+# L shape parameters
+# FRAME_RATE = [20]*4 #Hz
+# MOUSE = [4, 4, 1, 1]
+# CAGE = [6, 7, 11, 13]
+# ENV= [r'\envB']*4
+# WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
 
 WINDOW = 0.2 #sec
 NUMBER_OF_PERMUTATIONS = 500
@@ -19,15 +35,10 @@ ALPHA = 0.05
 HIGH_PRECENTAGE= 0.1 # for conditional probability in edges - to find those cells that
             # have the high %HIGH_PRECENTAGE percent activation in edge given activation in run
 
-
-
-def plot_all_SCE_segments(segments, SCE_masks, frame_rate, place_cells, p_r_s):
+def plot_all_SCE_segments(segments, SCE_masks, frame_rate, mouse_name):
     number_of_segments = len(segments)
     for i in range(number_of_segments):
-        plot_segment_activity(segments[i], SCE_masks[i], frame_rate)
-        plot_decoded_SCE_activity(segments[i], SCE_masks[i], frame_rate, place_cells,
-                                  [p_r_s])
-        raw_input('press enter')
+        plot_segment_activity(segments[i], SCE_masks[i], frame_rate, mouse_name)
     return
 
 def count_neurons_in_all_SCEs(segments, SCE_masks, frame_rate):
@@ -88,9 +99,9 @@ def count_SCE_participation_in_all_segments(segments, SCE_masks, frame_rate):
 
     return number_of_SCE_activations
 
-def plot_segment_activity(segment, SCE_mask, frame_rate):
+def plot_segment_activity(segment, SCE_mask, frame_rate, mouse_name):
     # segmet is a list size 2: segment[0] is edge epoch, segment[1] is run epoch
-    frames_per_window = WINDOW * frame_rate
+    frames_per_window = int(WINDOW * frame_rate)
     number_of_possible_SCE = len(SCE_mask)
 
     for frame in range(number_of_possible_SCE):
@@ -107,7 +118,9 @@ def plot_segment_activity(segment, SCE_mask, frame_rate):
                 axx[1].matshow(segment[1][active_neurons, :][ind_neuron_sort, :],
                                interpolation='none', aspect='auto')
                 axx[1].set_title('Run activity')
+                f.suptitle(mouse_name)
                 f.show()
+                savefig(mouse_name, format='pdf')
     return
 
 def plot_SCE_covarage(segment, SCE_mask, p_r_s, frame_rate):
@@ -145,7 +158,6 @@ def plot_SCE_covarage(segment, SCE_mask, p_r_s, frame_rate):
             ax.plot(np.sum(relevant_p_r_s['backward'], axis=0), 'r')
             ax.set_yticks([0, max(np.sum(relevant_p_r_s['backward'], axis=0))])
             show()
-            raw_input('press enter to continue')
             close()
     return
 
@@ -265,7 +277,7 @@ def main():
             print CAGE[i], mouse, day
             print
             session_dir = mouse_dir + '\%s\%s' % (day, ENV[i])
-            events, traces, movement_data, place_cells, p_r_s = load_session_data(session_dir)
+            events, traces, movement_data, _, _ = load_session_data(session_dir)
             events_segments_before = \
                 create_segments_for_run_epochs_and_edges_entire_session(events,
                                                             movement_data,
@@ -283,7 +295,10 @@ def main():
             SCE_masks = find_SCE_in_segments(events_segments_before,
                                              chance_SCE_activation, FRAME_RATE[i])
             plot_all_SCE_segments(events_segments_before, SCE_masks,
-                                  FRAME_RATE[i], place_cells, p_r_s)
+                                  FRAME_RATE[i],
+                                  'C%dM%d environment %s session %s'
+                                  % (CAGE[i], mouse, ENV[i][-4], day))
+
             neurons_counter, count_run = \
                 count_neurons_in_all_SCEs(events_segments_before, SCE_masks, FRAME_RATE[i])
 
@@ -295,9 +310,14 @@ def main():
 
     relevant_indices = ~np.isnan(count_run_all_mice)
 
-    np.savez('SCE_analysis', neurons_counter_all_mice = neurons_counter_all_mice,
-             count_run_all_mice = count_run_all_mice,
-             relevant_indices =relevant_indices)
+    # np.savez('SCE_analysis_Lshape', neurons_counter_all_mice = neurons_counter_all_mice,
+    #          count_run_all_mice = count_run_all_mice,
+    #          relevant_indices =relevant_indices)
+
+    np.savez('SCE_analysis_Linear',
+             neurons_counter_all_mice=neurons_counter_all_mice,
+             count_run_all_mice=count_run_all_mice,
+             relevant_indices=relevant_indices)
 
     raw_input('press enter')
 
