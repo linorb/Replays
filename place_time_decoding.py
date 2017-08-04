@@ -10,28 +10,25 @@ from zivlab.analysis.place_cells import find_place_cells
 from decode_bucket_trials import test_bucket_trial
 
 # Linear track parameters
-# FRAME_RATE = [20]*4
-# FRAME_RATE.extend([10]*5) #Hz
-# MOUSE = [4, 4, 1, 1, 6, 3, 6, 3, 0]
-# CAGE = [6, 7, 11, 13, 40, 40, 38, 38, 38]
-# ENV = [r'\envA']*4
-# ENV.extend([r'\linear']*5)
-# WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
-# WORK_DIR.extend([r'D:\dev\replays\work_data\recall']*5)
-
-
-# L-shape track parameters
-FRAME_RATE = [20]*4 #Hz
+FRAME_RATE = [20]*4
+FRAME_RATE.extend([10]*5) #Hz
 MOUSE = [4, 4, 1, 1]
 CAGE = [6, 7, 11, 13]
-ENV= [r'\envB']*4
+ENV = [r'\envA']*4
 WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
 
+# L-shape track parameters
+# FRAME_RATE = [20]*4 #Hz
+# MOUSE = [4, 4, 1, 1]
+# CAGE = [6, 7, 11, 13]
+# ENV= [r'\envB']*4
+# WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
+
 EDGE_BINS = [0, 1, 10, 11]
-VELOCITY_THRESHOLD = 5
+VELOCITY_THRESHOLD = 3
 NUMBER_OF_BINS = 24
 SPACE_BINNING = 2
-NUMBER_OF_PERMUTATIONS = 1000
+NUMBER_OF_PERMUTATIONS = 100
 FRAMES_TO_LOOK_BACK = 1
 MIN_NUMBER_OF_EVENTS = 15
 
@@ -39,7 +36,10 @@ def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
     events_filename = 'fixedEventsMat.mat'
     log_filename = 'frameLog.csv'
-    behavior_filename = 'my_mvmt_smooth.mat'
+    if 'envA' in session_dir:
+        behavior_filename = 'my_mvmt_smooth.mat'
+    else: # envB
+        behavior_filename = 'my_mvmt_fixed.mat'
 
     all_events = matlab.load_events_file(os.path.join(session_dir, events_filename))
     frame_log = matlab.load_frame_log_file(os.path.join(session_dir,log_filename))
@@ -77,7 +77,7 @@ def calculate_p_val_for_mae(events, bins, p_neuron_bin,
     p_val =  \
         sum(mae_permutation < original_mae)/np.float32(number_of_permutations)
 
-    return p_val
+    return p_val, mae_permutation
 
 def plot_decoded_bins(decoded_bins, real_bins, session_details):
     f = figure()
@@ -156,6 +156,7 @@ def main():
 
             # load the session data
             session_dir = mouse_dir + '\%s%s' %(day, ENV[i])
+            print session_dir
             session_ind = int(day[-1])-1
             events_traces, movement_data = \
                 load_session_data(session_dir, cell_registration, session_ind)
@@ -194,6 +195,7 @@ def main():
 
         mean_error_all_sessions = [[] for j,_ in enumerate(days_list)]
         pval_for_mean_error = [[] for j,_ in enumerate(days_list)]
+        mean_error_permutaion_all_sessions = [[] for j,_ in enumerate(days_list)]
         for train_session_ind, day in enumerate(days_list):
             print 'training on data set for', CAGE[i], mouse, day
             # Create p_neuron_bin with all session trials for testing with other
@@ -243,7 +245,7 @@ def main():
                         mean_error_bins = np.mean(np.abs((test_bins[active_frames] -
                                                     estimated_bins[
                                                         active_frames])))
-                        pval = calculate_p_val_for_mae(test_events[train_place_cells, :],
+                        pval, mae_permutation = calculate_p_val_for_mae(test_events[train_place_cells, :],
                                                 test_bins,
                                                 current_p_neuron_bin,
                                                 mean_error_bins,
@@ -263,6 +265,9 @@ def main():
                         pval_for_mean_error \
                             [np.abs(train_session_ind - test_session_ind)]. \
                             append(pval)
+                        mean_error_permutaion_all_sessions \
+                            [np.abs(train_session_ind - test_session_ind)]. \
+                            append(mae_permutation)
 
                 # The case below is for different sessions for training and testing
                 else:
@@ -303,7 +308,7 @@ def main():
                         active_frames = np.sum(test_events, axis=0) > 0
                         mean_error_bins = np.mean(np.abs((test_bins[active_frames] -
                                            estimated_bins[active_frames])))
-                        pval = calculate_p_val_for_mae(
+                        pval, mae_permutation = calculate_p_val_for_mae(
                             test_events[shared_place_cells, :],
                             test_bins,
                             current_p_neuron_bin,
@@ -325,18 +330,23 @@ def main():
                         pval_for_mean_error \
                             [np.abs(train_session_ind - test_session_ind)]. \
                             append(pval)
-
-                        mean_error_all_sessions\
+                        mean_error_permutaion_all_sessions\
                         [np.abs(train_session_ind - test_session_ind)].\
-                            append(mean_error_bins)
+                            append(mae_permutation)
 
-        # np.savez('linear_track_decoding_results_c%sm%s' % (CAGE[i], mouse),
-        #          mean_error_all_sessions=mean_error_all_sessions,
-        #          pval_for_mean_error=pval_for_mean_error)
-
-        np.savez('Lshape_track_decoding_results_c%sm%s' % (CAGE[i], mouse),
+        print 'saving: linear_track_decoding_results_c%sm%s' % (CAGE[i], mouse)
+        np.savez('linear_track_decoding_results_c%sm%s' % (CAGE[i], mouse),
                  mean_error_all_sessions=mean_error_all_sessions,
+                 mean_error_permutaion_all_sessions =
+                 mean_error_permutaion_all_sessions,
                  pval_for_mean_error=pval_for_mean_error)
+
+        # print 'saving: Lshape_track_decoding_results_c%sm%s' % (CAGE[i], mouse)
+        # np.savez('Lshape_track_decoding_results_c%sm%s' % (CAGE[i], mouse),
+        #          mean_error_all_sessions=mean_error_all_sessions,
+        #          mean_error_permutaion_all_sessions=
+        #          mean_error_permutaion_all_sessions,
+        #          pval_for_mean_error=pval_for_mean_error)
         # raw_input('press enter')
         # close("all")
 
