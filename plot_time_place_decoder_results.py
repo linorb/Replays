@@ -18,7 +18,7 @@ def main():
     f, axx = subplots(1, 2, sharey=True)
     mouse_plot = []
     for i in range(len(MOUSE)):
-        npzfile = np.load(r'linear_track_decoding_results_c%dm%d.npz'\
+        npzfile = np.load(r'results\linear_track_decoding_results_c%dm%d.npz'\
                           %(CAGE[i], MOUSE[i]))
         # The zero is the decoding only for the trials from the same day
         MAE_all_miceA.append(npzfile['mean_error_all_sessions'][0])
@@ -26,7 +26,7 @@ def main():
         chance_level_per_trial = np.array([np.mean(x) for x in MAE_permutation])
         chance_level_all_miceA.append(chance_level_per_trial)
 
-        npzfile = np.load(r'Lshape_track_decoding_results_c%sm%s.npz' \
+        npzfile = np.load(r'results\Lshape_track_decoding_results_c%sm%s.npz' \
                           % (CAGE[i], MOUSE[i]))
         MAE_all_miceB.append(npzfile['mean_error_all_sessions'][0])
         MAE_permutation = npzfile['mean_error_permutaion_all_sessions'][0]
@@ -35,13 +35,12 @@ def main():
 
         xticklabel.append('C%dM%d' %(CAGE[i], MOUSE[i]))
 
-    # put the legend outside the axis. taken from:
-    #  https://matplotlib.org/users/legend_guide.html
-    legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.,
-               handles=mouse_plot)
-    axx[0].axhline(0, color='black')
-    axx[0].axvline(0, color='black')
-    axx[0].grid()
+    # # put the legend outside the axis. taken from:
+    # #  https://matplotlib.org/users/legend_guide.html
+    # legend(bbox_to_anchor=(1.1, 1.05))
+    # axx[0].axhline(0, color='black')
+    # axx[0].axvline(0, color='black')
+    # axx[0].grid()
 
     meam_MAEA = np.array([np.mean(x) for x in MAE_all_miceA])
     std_MAEA = np.array([np.std(x) for x in MAE_all_miceA])
@@ -62,11 +61,11 @@ def main():
                              color='red',fmt='o', label='Performance')
     line2 = axx[1].errorbar(np.arange(1,5,1),meam_chanceB, yerr=std_chanceB,
                              color='gray',fmt='o', label='Chance level')
-    legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    legend(bbox_to_anchor=(1.1, 1.))
     setp(axx[1], xticks=np.arange(1,5,1), xticklabels = xticklabel)
     axx[1].set_title('Environment B', fontsize=20)
     axx[1].set_xlim(0, 5)
-    f.suptitle('Maximum-likelihood decoder performance per mouse', fontsize=18)
+    f.suptitle('Maximum-likelihreood decoder performance per mouse', fontsize=18)
 
     for i in range(2):
         for xtick in axx[i].xaxis.get_major_ticks():
