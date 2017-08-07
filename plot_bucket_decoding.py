@@ -34,7 +34,7 @@ def main():
     correct_decoding_A = []
     correct_decoding_B = []
     for i, mouse in enumerate(MOUSE):
-        npzfile = np.load(r'result\sbucket_decoding_results_c%sm%s.npz'\
+        npzfile = np.load(r'results\bucket_decoding_results_c%sm%s.npz'\
                           %(CAGE[i], mouse))
         correct_decoding_percentage = npzfile['correct_decoding_percentage']
 
@@ -161,10 +161,10 @@ def main():
     envA_velocity = np.concatenate(envA_velocity)
     envB_velocity = np.concatenate(envB_velocity)
 
-    # dA, pA = sio.ks_2samp(decoded_bins_all_mice[env_A_indices],
-    #                     envA_bins[np.abs(envA_velocity) > VELOCITY_THRESHOLD])
-    # dB, pB = sio.ks_2samp(decoded_bins_all_mice[env_A_indices],
-    #                     envA_bins[np.abs(envA_velocity) > VELOCITY_THRESHOLD])
+    dA, pA = sio.ks_2samp(decoded_bins_all_mice['envA'][env_A_indices['envA']],
+                        envA_bins[np.abs(envA_velocity) > VELOCITY_THRESHOLD])
+    dB, pB = sio.ks_2samp(decoded_bins_all_mice['envB'][env_A_indices['envB']],
+                        envB_bins[np.abs(envB_velocity) > VELOCITY_THRESHOLD])
 
     axx2[1, 0].hist([decoded_bins_all_mice['envA'][env_A_indices['envA']],
                      decoded_bins_all_mice['envB'][env_A_indices['envB']],
