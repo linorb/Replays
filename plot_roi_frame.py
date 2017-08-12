@@ -13,13 +13,15 @@ from bambi.analysis.roi import ROI
 from bambi.tools.image import clipped_zoom
 from bambi.tools.matlab import load_filters_matrix, load_log_file
 
-MOUSE = '6'
+MOUSE = '3'
 CAGE = '40'
 WORK_DIR = R'D:\dev\real_time_imaging_experiment_analysis\work_data_for_roi_figure'
-# ROIS_INDICES = [36, 53, 80, 89, 158, 181, 195, 229, 258, 290, 321, 336,
-#                      339, 357, 366, 392, 394, 399, 408, 439, 446, 448, 449,
-#                      465, 490]
-ROIS_INDICES = [44, 61, 78, 96, 154, 157, 172, 195, 214, 226, 244, 247,
+if MOUSE == '3':
+    ROIS_INDICES = [36, 53, 80, 89, 158, 181, 195, 229, 258, 290, 321, 336,
+                         339, 357, 366, 392, 394, 399, 408, 439, 446, 448, 449,
+                         465, 490]
+else:
+    ROIS_INDICES = [44, 61, 78, 96, 154, 157, 172, 195, 214, 226, 244, 247,
                      259, 261, 262, 286, 287, 290, 301, 303, 314, 337, 340,
                      346, 348, 368, 372, 374, 383, 389, 391, 407, 415, 418,
                      419, 448, 448, 460, 472, 473, 474, 479, 488, 501, 517, 569]
@@ -166,7 +168,7 @@ def main():
         axx[day].imshow(current_frame, aspect='auto')
         axx[day].set_title('Session %d' %day)
 
-    fig.suptitle('C%sM%s' %(CAGE, MOUSE))
+    fig.suptitle('C%sM%s' %(CAGE, MOUSE), fontsize=20)
     fig.show()
 
     raw_input('Press enter')
