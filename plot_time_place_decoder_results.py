@@ -65,7 +65,6 @@ def main():
     setp(axx[1], xticks=np.arange(1,5,1), xticklabels = xticklabel)
     axx[1].set_title('Environment B', fontsize=25)
     axx[1].set_xlim(0, 5)
-    f.suptitle('Maximum-likelihreood decoder performance per mouse', fontsize=25)
 
     for i in range(2):
         for xtick in axx[i].xaxis.get_major_ticks():

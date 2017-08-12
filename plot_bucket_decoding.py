@@ -73,8 +73,8 @@ def main():
     xticks([1, 2], ['A', 'B'], fontsize=22)
     yticks(fontsize=22)
     ylim(0,1)
-    ylabel('Matched environment decoding fraction', fontsize=22)
-    legend(handles=[line1])
+    ylabel('Matched environment\n decoding fraction', fontsize=22)
+    legend(handles=[line1], fontsize=20)
 
     f1.show()
 

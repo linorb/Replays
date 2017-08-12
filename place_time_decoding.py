@@ -113,8 +113,9 @@ def plot_decoded_bins(decoded_bins, real_bins, session_details):
     f = figure()
     line1, = plot(real_bins, 'b', label='actual behavior')
     line2, = plot(decoded_bins, 'r', label='decoded behavior')
-    legend(handles=[line1, line2])
-    title('Decoder performance' + session_details)
+    legend(handles=[line1, line2], fontsize=25)
+    xlabel(fontsize=25)
+    ylabel(fontsize=25)
     f.show()
 
     return
