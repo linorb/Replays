@@ -38,12 +38,13 @@ def main():
 
     # put the legend outside the axis. taken from:
     #  https://matplotlib.org/users/legend_guide.html
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handles=mouse_plot)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., 
+               handles=mouse_plot, fontsize=20)
     axx[0, 2].axhline(0, color='black')
     axx[0, 2].axvline(0, color='black')
     axx[0, 2].grid()
-    axx[0, 2].set_ylabel('after run', fontsize=17)
-    axx[0, 2].set_title('Effect size', fontsize=18)
+    axx[0, 2].set_ylabel('after run', fontsize=23)
+    axx[0, 2].set_title('Effect size', fontsize=23)
     axx[0, 2].set_xlim(-1, 1)
     axx[0, 2].set_ylim(-1, 1)
 
@@ -63,25 +64,24 @@ def main():
 
     axx[0, 0].axhline(0, color='black')
     axx[0, 0].axvline(0, color='black')
-    axx[0, 0].axhline(0.025, color='red')
+    axx[0, 0].axhline(0.023, color='red')
     axx[0, 0].grid()
-    axx[0, 0].set_ylabel('Environment A \n\nP value', fontsize=17)
+    axx[0, 0].set_ylabel('Environment A \n\nP value', fontsize=23)
     axx[0, 0].set_title('p(active before run|active in run) - \n'
-        'p(active before run|not active in run)', fontsize=18)
+        'p(active before run|not active in run)', fontsize=23)
     axx[0, 0].set_xlim(-10, 10)
-    axx[0, 0].set_ylim(-0.1, 1)
+    axx[0, 0].set_ylim(-0.03, 1.1)
 
     axx[0, 1].axhline(0, color='black')
     axx[0, 1].axvline(0, color='black')
-    axx[0, 1].axhline(0.025, color='red')
-    axx[0, 1].set_ylabel('P value', fontsize=17)
+    axx[0, 1].axhline(0.023, color='red')
+    axx[0, 1].set_ylabel('P value', fontsize=23)
     axx[0, 1].set_title('p(active after run|active in run) - \n'
-        'p(active after run|not active in run)', fontsize=18)
-    axx[0, 1].set_ylim(-0.01, 1.1)
+        'p(active after run|not active in run)', fontsize=23)
+    axx[0, 1].set_ylim(-0.03, 1.1)
     axx[0, 1].set_xlim(-10, 10)
     axx[0, 1].grid(axis='both')
-    axx[0, 1].set_xlim(-10, 10)
-    axx[0, 1].set_ylim(-0.1, 1)
+
 
     ######### For L-shape track #########:
 
@@ -111,9 +111,9 @@ def main():
     axx[1, 2].axvline(0, color='black')
     axx[1, 2].grid()
     axx[1, 2].set_ylabel(
-        'after run', fontsize=17)
+        'after run', fontsize=23)
     axx[1, 2].set_xlabel(
-        'before run', fontsize=17)
+        'before run', fontsize=23)
     axx[1, 2].set_xlim(-1, 1)
     axx[1, 2].set_ylim(-1, 1)
 
@@ -133,32 +133,34 @@ def main():
 
     axx[1, 0].axhline(0, color='black')
     axx[1, 0].axvline(0, color='black')
-    axx[1, 0].axhline(0.025, color='red')
+    axx[1, 0].axhline(0.023, color='red')
     axx[1, 0].grid()
-    axx[1, 0].set_xlabel('T statistic', fontsize=17)
-    axx[1, 0].set_ylabel('Environment B \n\nP value', fontsize=17)
+    axx[1, 0].set_xlabel('T statistic', fontsize=23)
+    axx[1, 0].set_ylabel('Environment B \n\nP value', fontsize=23)
     # axx[1, 0].set_aspect('equal', 'datalim')
     axx[1, 0].set_xlim(-10, 10)
-    axx[1, 0].set_ylim(-0.1, 1)
+    axx[1, 0].set_ylim(-0.03, 1.1)
 
     axx[1,  1].axhline(0, color='black')
     axx[1,  1].axvline(0, color='black')
-    axx[1,  1].axhline(0.025, color='red')
-    axx[1,  1].set_xlabel('T statistic', fontsize=17)
-    axx[1,  1].set_ylabel('P value', fontsize=17)
-    axx[1,  1].set_ylim(-0.01, 1.1)
+    axx[1,  1].axhline(0.023, color='red')
+    axx[1,  1].set_xlabel('T statistic', fontsize=23)
+    axx[1,  1].set_ylabel('P value', fontsize=23)
+    axx[1,  1].set_ylim(-0.03, 1.1)
     axx[1,  1].set_xlim(-10, 10)
     # axx[1,  1].set_aspect('equal', 'datalim')
     axx[1,  1].grid(axis='both')
-    axx[1, 1].set_xlim(-10, 10)
-    axx[1, 1].set_ylim(-0.1, 1)
+
 
     for i in range(2):
         for j in range(3):
             for xtick in axx[i, j].xaxis.get_major_ticks():
-               xtick.label.set_fontsize(15)
+               xtick.label.set_fontsize(22)
             for ytick in axx[i, j].yaxis.get_major_ticks():
-               ytick.label.set_fontsize(15)
+               ytick.label.set_fontsize(22)
+            box = axx[i, j].get_position()
+            axx[i, j].set_position([box.x0, box.y0+box.height*0.1,
+                                   box.width*0.8, box.height*0.9])
 
     f.show()
 

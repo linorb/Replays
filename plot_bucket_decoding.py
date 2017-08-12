@@ -70,10 +70,10 @@ def main():
         text(i+1, max_value + 0.1, displaystring, ha='center',
                  va='center', bbox=dict(facecolor='1.', edgecolor='none'))
 
-    xticks([1, 2], ['A', 'B'], fontsize=15)
-    yticks(fontsize=15)
+    xticks([1, 2], ['A', 'B'], fontsize=22)
+    yticks(fontsize=22)
     ylim(0,1)
-    ylabel('Matched environment decoding fraction', fontsize=15)
+    ylabel('Matched environment decoding fraction', fontsize=22)
     legend(handles=[line1])
 
     f1.show()
@@ -169,37 +169,37 @@ def main():
     axx2[1, 0].hist([decoded_bins_all_mice['envA'][env_A_indices['envA']],
                      decoded_bins_all_mice['envB'][env_A_indices['envB']],
                      envA_bins[np.abs(envA_velocity) > VELOCITY_THRESHOLD]],
-                    normed=True, align='right')
-    axx2[1, 0].set_xlabel('Decoded bin', fontsize=18)
-    axx2[1, 0].set_ylabel('Probability', fontsize=18)
+                    normed=True, align='right', bins=12)
+    axx2[1, 0].set_xlabel('Decoded bin', fontsize=25)
+    axx2[1, 0].set_ylabel('Probability', fontsize=25)
     axx2[1, 1].hist([decoded_bins_all_mice['envB'][env_B_indices['envB']],
                      decoded_bins_all_mice['envA'][env_B_indices['envA']],
                      envB_bins[np.abs(envB_velocity) > VELOCITY_THRESHOLD]],
-                    normed=True, align='right', label=
+                    normed=True, bins=12, align='right', label=
                     ['decoded bins in matched bucket',
                      'decoded bins in not matched bucket',
                      'linear track occupancy'])
-    legend()
+    legend(bbox_to_anchor=(1.3, 1.2),fontsize=20)
     axx2[0, 0].boxplot(box_data_A['envA'])
-    rect = [0.1, 0.6, 0.3, 0.3]
+    rect = [0.1, 0.5, 0.4, 0.4]
     insetA = add_subplot_axes(axx2[0, 0],rect)
     insetA.boxplot(box_data_A['envB'])
     axx2[0, 0].set_ylim(0,35)
-    axx2[0, 0].set_ylabel('Number of events in frame', fontsize=18)
-    axx2[0, 0].set_title('Environment A', fontsize=18)
+    axx2[0, 0].set_ylabel('Number of events in frame', fontsize=25)
+    axx2[0, 0].set_title('Environment A', fontsize=25)
     axx2[0, 1].boxplot(box_data_B['envB'])
     insetB = add_subplot_axes(axx2[0, 1], rect)
     insetB.boxplot(box_data_B['envA'])
-    axx2[0, 1].set_title('Environment B', fontsize=18)
+    axx2[0, 1].set_title('Environment B', fontsize=25)
 
-    axx2[1, 1].set_xlabel('Decoded bin', fontsize=18)
-    f2.suptitle('Bucket decoding', fontsize=18)
+    axx2[1, 1].set_xlabel('Decoded bin', fontsize=25)
+    f2.suptitle('Bucket decoding', fontsize=25)
     for i in range(2):
         for j in range(2):
             for xtick in axx2[i, j].xaxis.get_major_ticks():
-               xtick.label.set_fontsize(15)
+               xtick.label.set_fontsize(22)
             for ytick in axx2[i, j].yaxis.get_major_ticks():
-                ytick.label.set_fontsize(15)
+                ytick.label.set_fontsize(22)
 
     f2.show()
 
@@ -227,12 +227,12 @@ def main():
         f0, axx0 = subplots(3, 2, sharex='row', sharey='row')
         # axx0[0, 0].hist(np.argmax(p_neuron_bin['envB_negative'][0], axis=1))
         # axx0[0, 0].set_title('L-shape negative speed')
-        # axx0[0, 0].set_ylabel('# cells with place field', fontsize=15)
+        # axx0[0, 0].set_ylabel('# cells with place field', fontsize=22)
         # axx0[0, 1].hist(np.argmax(p_neuron_bin['envA_negative'][0], axis=1))
         # axx0[0, 1].set_title('Linear negative speed')
         # axx0[1, 0].hist(np.argmax(p_neuron_bin['envB_positive'][0], axis=1))
         # axx0[1, 0].set_title('L-shape positive speed')
-        # axx0[1, 0].set_ylabel('# cells with place field', fontsize=15)
+        # axx0[1, 0].set_ylabel('# cells with place field', fontsize=22)
         # axx0[1, 1].hist(np.argmax(p_neuron_bin['envA_positive'][0], axis=1))
         # axx0[1, 1].set_title('Linear positive speed')
         # axx0[1, 1].set_title('L-shape negative speed')
@@ -274,12 +274,12 @@ def main():
 
     axx2[0, 0].hist(np.argmax(p_neuron_bin_all['envB_negative'], axis=1))
     axx2[0, 0].set_title('L-shape negative speed')
-    axx2[0, 0].set_ylabel('# cells with place field', fontsize=15)
+    axx2[0, 0].set_ylabel('# cells with place field', fontsize=25)
     axx2[0, 1].hist(np.argmax(p_neuron_bin_all['envA_negative'], axis=1))
     axx2[0, 1].set_title('Linear negative speed')
     axx2[1, 0].hist(np.argmax(p_neuron_bin_all['envB_positive'], axis=1))
     axx2[1, 0].set_title('L-shape positive speed')
-    axx2[1, 0].set_ylabel('# cells with place field', fontsize=15)
+    axx2[1, 0].set_ylabel('# cells with place field', fontsize=25)
     axx2[1, 1].hist(np.argmax(p_neuron_bin_all['envA_positive'], axis=1))
     axx2[1, 1].set_title('Linear positive speed')
     axx2[1, 1].set_title('L-shape negative speed')
@@ -312,14 +312,14 @@ def main():
     #
     # axx2[2, 1].boxplot(box_dataA)
     # axx2[2, 1].set_title('Linear track')
-    # axx2[2, 1].set_xlabel('# bin', fontsize=15)
+    # axx2[2, 1].set_xlabel('# bin', fontsize=25)
     # axx2[2, 0].boxplot(box_dataB)
     # axx2[2, 0].set_title('L-shape track')
     # axx2[2, 0].set_ylim(0,100)
-    # axx2[2, 0].set_xlabel('# bin', fontsize=15)
-    # axx2[2, 0].set_ylabel('speed (cm/sec)', fontsize=15)
+    # axx2[2, 0].set_xlabel('# bin', fontsize=25)
+    # axx2[2, 0].set_ylabel('speed (cm/sec)', fontsize=25)
     #
-    # f2.suptitle('Speed distribution per bin', fontsize=18)
+    # f2.suptitle('Speed distribution per bin', fontsize=25)
     #
     # f2.show()
 

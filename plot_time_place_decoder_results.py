@@ -55,23 +55,23 @@ def main():
     axx[0].errorbar(np.arange(1,5,1), meam_MAEA, yerr=std_MAEA, color='red', fmt='o')
     axx[0].errorbar(np.arange(1,5,1),meam_chanceA, yerr=std_chanceA, color='gray', fmt='o')
     setp(axx[0], xticks=np.arange(1, 5, 1), xticklabels=xticklabel)
-    axx[0].set_ylabel('Absolut median error', fontsize=18)
-    axx[0].set_title('Environment A', fontsize=20)
+    axx[0].set_ylabel('Absolut median error', fontsize=25)
+    axx[0].set_title('Environment A', fontsize=25)
     line1 = axx[1].errorbar(np.arange(1,5,1),meam_MAEB, yerr=std_MAEB,
                              color='red',fmt='o', label='Performance')
     line2 = axx[1].errorbar(np.arange(1,5,1),meam_chanceB, yerr=std_chanceB,
                              color='gray',fmt='o', label='Chance level')
-    legend(bbox_to_anchor=(1.1, 1.))
+    legend(bbox_to_anchor=(1.1, 1.), fontsize=20)
     setp(axx[1], xticks=np.arange(1,5,1), xticklabels = xticklabel)
-    axx[1].set_title('Environment B', fontsize=20)
+    axx[1].set_title('Environment B', fontsize=25)
     axx[1].set_xlim(0, 5)
-    f.suptitle('Maximum-likelihreood decoder performance per mouse', fontsize=18)
+    f.suptitle('Maximum-likelihreood decoder performance per mouse', fontsize=25)
 
     for i in range(2):
         for xtick in axx[i].xaxis.get_major_ticks():
-           xtick.label.set_fontsize(15)
+           xtick.label.set_fontsize(22)
         for ytick in axx[i].yaxis.get_major_ticks():
-            ytick.label.set_fontsize(15)
+            ytick.label.set_fontsize(22)
 
 
     f.show()

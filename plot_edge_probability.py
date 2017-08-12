@@ -41,11 +41,11 @@ def main():
 
     axx[0, 0].hist(p_edge_run_all_mice[~np.isnan(p_edge_run_all_mice)],
                    normed=True)
-    axx[0, 0].set_title('P(active in edge|active in run)', fontsize=18)
-    axx[0, 0].set_ylabel('Environment A \n \n Density', fontsize=18)
+    axx[0, 0].set_title('P(active in edge|active in run)', fontsize=25)
+    axx[0, 0].set_ylabel('Environment A \n \n Density', fontsize=25)
     axx[0, 1].hist(p_edge_no_run_all_mice[~np.isnan(p_edge_no_run_all_mice)],
                    normed=True)
-    axx[0, 1].set_title('P(active in edge|not active in run)', fontsize=18)
+    axx[0, 1].set_title('P(active in edge|not active in run)', fontsize=25)
 
     ######### For L-shape track #########:
 
@@ -78,18 +78,18 @@ def main():
 
     axx[1, 0].hist(p_edge_run_all_mice[~np.isnan(p_edge_run_all_mice)],
                    normed=True)
-    axx[1, 0].set_ylabel('Environment B \n \n Density', fontsize=18)
-    axx[1, 0].set_xlabel('Probability for activation', fontsize=18)
+    axx[1, 0].set_ylabel('Environment B \n \n Density', fontsize=25)
+    axx[1, 0].set_xlabel('Probability for activation', fontsize=25)
     axx[1, 1].hist(p_edge_no_run_all_mice[~np.isnan(p_edge_no_run_all_mice)],
                    normed=True)
-    axx[1, 1].set_xlabel('Probability for activation', fontsize=18)
+    axx[1, 1].set_xlabel('Probability for activation', fontsize=25)
     # plt.yscale('log', nonposy='clip')
     for i in range(2):
         for j in range(2):
             for xtick in axx[i, j].xaxis.get_major_ticks():
-                xtick.label.set_fontsize(15)
+                xtick.label.set_fontsize(22)
             for ytick in axx[i, j].yaxis.get_major_ticks():
-                ytick.label.set_fontsize(15)
+                ytick.label.set_fontsize(22)
 
     f.show()
     raw_input('press enter')

@@ -35,7 +35,7 @@ def add_subplot_axes(ax,rect,axisbg='w'):
 
 def main():
 
-    filename = r'SCE_analysis_Linear.npz'
+    filename = r'results\SCE_analysis_Linear.npz'
     npzfile = np.load(filename)
     neurons_counter_all_mice = npzfile['neurons_counter_all_mice']
     count_run_all_mice = npzfile['count_run_all_mice']
@@ -46,28 +46,28 @@ def main():
 
     f, axx = subplots(3, 2, sharey='row', sharex='row')
     axx[0, 0].hist(neurons_counter_all_mice[relevant_indices], normed=True)
-    axx[0, 0].set_xlabel('Number of neurons per SCE', fontsize=16)
-    axx[0, 0].set_ylabel('Density', fontsize=16)
-    axx[0, 0].set_title('Environment A', fontsize=18)
+    axx[0, 0].set_xlabel('Number of neurons per SCE', fontsize=25)
+    axx[0, 0].set_ylabel('Density', fontsize=25)
+    axx[0, 0].set_title('Environment A', fontsize=25)
     rect = [0.6, 0.6, 0.3, 0.3]
     insetA = add_subplot_axes(axx[0, 0], rect)
     insetA.hist(neurons_counter_all_mice[relevant_indices], normed=True)
     insetA.set_yscale('log')
     axx[1, 0].hist(count_run_all_mice[relevant_indices], normed=True)
     axx[1, 0].set_xlabel('Number of shared neurons in SCE and following run'
-                      , fontsize=16)
-    axx[1, 0].set_ylabel('Density', fontsize=16)
+                      , fontsize=25)
+    axx[1, 0].set_ylabel('Density', fontsize=25)
     insetB = add_subplot_axes(axx[1, 0], rect)
     insetB.hist(count_run_all_mice[relevant_indices], normed=True)
     insetB.set_yscale('log')
     axx[2, 0].boxplot(box_data)
-    axx[2, 0].set_xlabel('number of neurons in SCE', fontsize=16)
+    axx[2, 0].set_xlabel('number of neurons in SCE', fontsize=25)
     axx[2, 0].set_ylabel('number of shared neurons \n in SCE and following run',
-                      fontsize=16)
+                      fontsize=25)
     axx[2, 0].set_xticks(np.arange(0,40,5))
     axx[2, 0].set_xticklabels(np.arange(0,40,5))
 
-    filename = r'SCE_analysis_Lshape.npz'
+    filename = r'results\SCE_analysis_Lshape.npz'
     npzfile = np.load(filename)
     neurons_counter_all_mice = npzfile['neurons_counter_all_mice']
     count_run_all_mice = npzfile['count_run_all_mice']
@@ -77,29 +77,29 @@ def main():
                                neurons_counter_all_mice[relevant_indices])
 
     axx[0, 1].hist(neurons_counter_all_mice[relevant_indices], normed=True)
-    axx[0, 1].set_xlabel('Number of neurons per SCE', fontsize=16)
-    axx[0, 1].set_title('Environment B', fontsize=18)
+    axx[0, 1].set_xlabel('Number of neurons per SCE', fontsize=25)
+    axx[0, 1].set_title('Environment B', fontsize=25)
     rect = [0.6, 0.6, 0.3, 0.3]
     insetA = add_subplot_axes(axx[0, 1], rect)
     insetA.hist(neurons_counter_all_mice[relevant_indices], normed=True)
     insetA.set_yscale('log')
     axx[1, 1].hist(count_run_all_mice[relevant_indices], normed=True)
     axx[1, 1].set_xlabel('Number of shared neurons in SCE and following run'
-                      , fontsize=16)
+                      , fontsize=25)
     insetB = add_subplot_axes(axx[1, 1], rect)
     insetB.hist(count_run_all_mice[relevant_indices], normed=True)
     insetB.set_yscale('log')
     axx[2, 1].boxplot(box_data)
-    axx[2, 1].set_xlabel('number of neurons in SCE', fontsize=16)
+    axx[2, 1].set_xlabel('number of neurons in SCE', fontsize=25)
     axx[2, 1].set_xticks(np.arange(0,40,5))
     axx[2, 1].set_xticklabels(np.arange(0,40,5))
 
     for j in range(3):
         for i in range(2):
             for xtick in axx[j, i].xaxis.get_major_ticks():
-                xtick.label.set_fontsize(15)
+                xtick.label.set_fontsize(22)
             for ytick in axx[j, i].yaxis.get_major_ticks():
-                ytick.label.set_fontsize(15)
+                ytick.label.set_fontsize(22)
             box = axx[j, i].get_position()
             axx[j, i].set_position([box.x0, box.y0 + box.height * 0.2,
                              box.width, box.height * 0.8])
