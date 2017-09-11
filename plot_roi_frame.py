@@ -122,10 +122,11 @@ def align_rois_to_frame(microscope_frame, rois_frame, transformations,
     # plt.figure()
     # plt.imshow(overlayed_frame, aspect='auto')
     # plt.show()
-
-    frame_to_show = overlayed_frame[cropping_coordinates[1]:cropping_coordinates[3],
-                    cropping_coordinates[0]:cropping_coordinates[2]]
-
+    if cropping_coordinates:
+        frame_to_show = overlayed_frame[cropping_coordinates[1]:cropping_coordinates[3],
+                        cropping_coordinates[0]:cropping_coordinates[2]]
+    else:
+        frame_to_show = overlayed_frame
     return frame_to_show
 
 def main():
@@ -134,7 +135,7 @@ def main():
                                 'logFile.txt' )
     rois_filename = os.path.join(WORK_DIR, 'C%sM%s' % (CAGE, MOUSE),
                                  'finalFiltersMat.mat')
-    fig, axx = plt.subplots(1, 6)
+    fig, axx = plt.subplots(2, 3)
     for day in np.arange(0,6):
         day_dir = os.path.join(WORK_DIR, 'C%sM%s' %(CAGE, MOUSE), 'day%d' %day)
         microscope_frames_filename = os.path.join(day_dir, 'frames_norm.tif')
@@ -164,11 +165,15 @@ def main():
             transformations = None
 
         current_frame = align_rois_to_frame(filtered_microscope_frame, rois_frame,
-                            transformations, cropping_coordinates)
-        axx[day].imshow(current_frame, aspect='auto')
-        axx[day].set_title('Session %d' %day)
+                            transformations, [])
+        axx[day/3][day%3].imshow(current_frame, aspect='auto')
+        axx[day/3][day%3].set_title('Session %d' %day)
+        # axx[day/3][day%3].tick_params(axis='both', which='both', bottom='off', top='off',
+        #                 labelbottom='off', labeltop='off')
+        axx[day / 3][day % 3].axis('off')
 
     fig.suptitle('C%sM%s' %(CAGE, MOUSE), fontsize=20)
+
     fig.show()
 
     raw_input('Press enter')

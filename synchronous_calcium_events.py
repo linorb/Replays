@@ -104,8 +104,24 @@ def plot_segment_activity(segment, SCE_mask, frame_rate, mouse_name):
     frames_per_window = int(WINDOW * frame_rate)
     number_of_possible_SCE = len(SCE_mask)
 
+    f1, axx1 = subplots(1, 2, sharey=True)
+    active_cells = np.sum(segment[0], axis=1) > 0
+    axx1[0].matshow(segment[0][active_cells, :],
+                   interpolation='none', aspect='auto')
+    axx1[0].set_title('Edge activity', fontsize=25)
+    axx1[0].set_xlabel('Time', fontsize=25)
+    axx1[0].set_ylabel('Neuron number', fontsize=25)
+    axx1[1].matshow(segment[1][active_cells, :],
+                   interpolation='none', aspect='auto')
+    axx1[1].set_title('Run activity', fontsize=25)
+    axx1[1].set_xlabel('Time', fontsize=25)
+
+
     for frame in range(number_of_possible_SCE):
         if SCE_mask[frame]:
+            axx1[0].axvline(frame, color='red')
+            axx1[0].axvline(frame + frames_per_window, color='red')
+
             SCE_activity = segment[0][:, frame:frame + frames_per_window]
             active_neurons = np.sum(SCE_activity, axis=1) > 0
             run_activity = np.sum(segment[1][active_neurons, :] > 0)
@@ -121,6 +137,14 @@ def plot_segment_activity(segment, SCE_mask, frame_rate, mouse_name):
                 f.suptitle(mouse_name)
                 f.show()
                 savefig(mouse_name, format='pdf')
+
+    for i in range(2):
+        for xtick in axx1[i].xaxis.get_top_ticks():
+           xtick.label.set_fontsize(25)
+        for ytick in axx1[i].yaxis.get_major_ticks():
+            ytick.label.set_fontsize(25)
+    f1.show()
+    savefig(mouse_name, format='png')
     return
 
 def plot_SCE_covarage(segment, SCE_mask, p_r_s, frame_rate):

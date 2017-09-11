@@ -67,13 +67,13 @@ def main():
         else:
             displaystring = r'*'
 
-        text(i+1, max_value + 0.1, displaystring, ha='center',
+        text(i+1, max_value + 0.05, displaystring, ha='center',
                  va='center', bbox=dict(facecolor='1.', edgecolor='none'))
 
     xticks([1, 2], ['A', 'B'], fontsize=22)
     yticks(fontsize=22)
     ylim(0,1)
-    ylabel('Matched environment\n decoding fraction', fontsize=22)
+    ylabel('Matched environment decoding fraction', fontsize=20)
     legend(handles=[line1], fontsize=20)
 
     f1.show()
@@ -87,7 +87,7 @@ def main():
     number_of_events_per_frame_all_mice = {'envA': [], 'envB': []}
     for i, mouse in enumerate(MOUSE):
 
-        npzfile = np.load(r'results\bucket_decoding_results_c%sm%s.npz'\
+        npzfile = np.load(r'bucket_decoding_results_c%sm%s.npz'\
                           %(CAGE[i], mouse))
         decoded_bins_all_sessions = npzfile['decoded_bins_all_sessions'].all()
         decoded_env_all_sessions = npzfile['decoded_env_all_sessions'].all()
