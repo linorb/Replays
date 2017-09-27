@@ -112,7 +112,7 @@ def decode_trial(trial_events, p_neuron_bin,
 def plot_decoded_bins(decoded_bins, real_bins, session_details):
     f = figure()
     line1, = plot(real_bins, 'b', label='actual behavior')
-    line2, = plot(decoded_bins, 'r', label='decoded behavior')
+    line2, = plot(decoded_bins, 'r*', label='decoded behavior')
     legend(bbox_to_anchor=[1.1, 1.1], handles=[line1, line2], fontsize=20)
     xlabel('Time [Sec]', fontsize=22)
     ylabel('Position [bin]', fontsize=22)

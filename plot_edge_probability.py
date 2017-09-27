@@ -39,14 +39,15 @@ def main():
     p_edge_run_all_mice = np.concatenate(p_edge_run_all_mice)
     p_edge_no_run_all_mice = np.concatenate(p_edge_no_run_all_mice)
 
+    edge_bins = np.arange(0, 1.1, 0.1)
     axx[0, 0].hist(p_edge_run_all_mice[~np.isnan(p_edge_run_all_mice)],
-                   normed=True)
+                   normed=True, bins = edge_bins)
     axx[0, 0].set_title('P(active in edge|active in run)', fontsize=25)
     axx[0, 0].set_ylabel('Environment A \n \n Density', fontsize=25)
     axx[0, 1].hist(p_edge_no_run_all_mice[~np.isnan(p_edge_no_run_all_mice)],
-                   normed=True)
+                   normed=True, bins = edge_bins)
     axx[0, 1].set_title('P(active in edge|not active in run)', fontsize=25)
-
+    axx[0, 1].set_ylim(0, 10)
     ######### For L-shape track #########:
 
     ### Load the data ###
@@ -77,11 +78,11 @@ def main():
     p_edge_no_run_all_mice = np.concatenate(p_edge_no_run_all_mice)
 
     axx[1, 0].hist(p_edge_run_all_mice[~np.isnan(p_edge_run_all_mice)],
-                   normed=True)
+                   normed=True, bins = edge_bins)
     axx[1, 0].set_ylabel('Environment B \n \n Density', fontsize=25)
     axx[1, 0].set_xlabel('Probability for activation', fontsize=25)
     axx[1, 1].hist(p_edge_no_run_all_mice[~np.isnan(p_edge_no_run_all_mice)],
-                   normed=True)
+                   normed=True, bins = edge_bins)
     axx[1, 1].set_xlabel('Probability for activation', fontsize=25)
     # plt.yscale('log', nonposy='clip')
     for i in range(2):

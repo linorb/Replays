@@ -87,7 +87,7 @@ def main():
     number_of_events_per_frame_all_mice = {'envA': [], 'envB': []}
     for i, mouse in enumerate(MOUSE):
 
-        npzfile = np.load(r'bucket_decoding_results_c%sm%s.npz'\
+        npzfile = np.load(r'results\bucket_decoding_results_c%sm%s.npz'\
                           %(CAGE[i], mouse))
         decoded_bins_all_sessions = npzfile['decoded_bins_all_sessions'].all()
         decoded_env_all_sessions = npzfile['decoded_env_all_sessions'].all()
@@ -165,17 +165,17 @@ def main():
                         envA_bins[np.abs(envA_velocity) > VELOCITY_THRESHOLD])
     dB, pB = sio.ks_2samp(decoded_bins_all_mice['envB'][env_A_indices['envB']],
                         envB_bins[np.abs(envB_velocity) > VELOCITY_THRESHOLD])
-
+    bin_edges = range(13)
     axx2[1, 0].hist([decoded_bins_all_mice['envA'][env_A_indices['envA']],
                      decoded_bins_all_mice['envB'][env_A_indices['envB']],
                      envA_bins[np.abs(envA_velocity) > VELOCITY_THRESHOLD]],
-                    normed=True, align='right', bins=12)
+                    normed=True, align='right', bins=bin_edges)
     axx2[1, 0].set_xlabel('Decoded bin', fontsize=25)
     axx2[1, 0].set_ylabel('Probability', fontsize=25)
     axx2[1, 1].hist([decoded_bins_all_mice['envB'][env_B_indices['envB']],
                      decoded_bins_all_mice['envA'][env_B_indices['envA']],
                      envB_bins[np.abs(envB_velocity) > VELOCITY_THRESHOLD]],
-                    normed=True, bins=12, align='right', label=
+                    normed=True, bins=bin_edges, align='right', label=
                     ['decoded bins in matched bucket',
                      'decoded bins in not matched bucket',
                      'linear track occupancy'])
@@ -193,12 +193,15 @@ def main():
     axx2[0, 1].set_title('Environment B', fontsize=25)
 
     axx2[1, 1].set_xlabel('Decoded bin', fontsize=25)
+    setp(axx2, xticks=np.arange(1, 13), xticklabels=['0', '1', '2', '3', '4',
+                                                     '5', '6', '7', '8', '9',
+                                                     '10', '11'])
     f2.suptitle('Bucket decoding', fontsize=25)
     for i in range(2):
         for j in range(2):
-            for xtick in axx2[i, j].xaxis.get_major_ticks():
-               xtick.label.set_fontsize(22)
-            for ytick in axx2[i, j].yaxis.get_major_ticks():
+            for k, xtick in enumerate(axx2[i, j].xaxis.get_major_ticks()):
+                xtick.label.set_fontsize(22)
+            for k, ytick in enumerate(axx2[i, j].yaxis.get_major_ticks()):
                 ytick.label.set_fontsize(22)
 
     f2.show()

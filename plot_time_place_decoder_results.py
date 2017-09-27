@@ -58,9 +58,9 @@ def main():
     axx[0].set_ylabel('Absolut median error', fontsize=25)
     axx[0].set_title('Environment A', fontsize=25)
     line1 = axx[1].errorbar(np.arange(1,5,1),meam_MAEB, yerr=std_MAEB,
-                             color='red',fmt='o', label='Performance')
+                             color='red',fmt='o', label='Data')
     line2 = axx[1].errorbar(np.arange(1,5,1),meam_chanceB, yerr=std_chanceB,
-                             color='gray',fmt='o', label='Chance level')
+                             color='gray',fmt='o', label='Shuffle')
     legend(bbox_to_anchor=(1.1, 1.), fontsize=20)
     setp(axx[1], xticks=np.arange(1,5,1), xticklabels = xticklabel)
     axx[1].set_title('Environment B', fontsize=25)
