@@ -5,7 +5,7 @@ def divide_to_boxes(x,y):
     # divied x to boxes valued in y. assuming integers in y
     max_box_value = int(np.max(y))
     boxes = []
-    for i in range(max_box_value):
+    for i in range(max_box_value+1):
         boxes.append(x[y == i])
 
     return boxes

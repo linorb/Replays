@@ -3,9 +3,9 @@
 
 import numpy as np
 import os
-from matplotlib.pyplot import *
 import matplotlib.gridspec as gridspec
 
+from matplotlib.pyplot import *
 from edges_events_probability_analysis import \
     create_segments_for_run_epochs_and_edges_entire_session,\
     load_session_data,EDGE_BINS
@@ -13,21 +13,21 @@ from edges_events_probability_analysis import \
 from bambi.tools.activity_loading import decode_entire_trial
 
 # Linear track parameters
-FRAME_RATE = [10]*5 #Hz
-FRAME_RATE.extend([20]*4)
-MOUSE = [3, 6, 6, 3, 0, 4, 4, 1, 1]
-CAGE = [40, 40, 38, 38, 38, 6, 7, 11, 13]
-ENV = [r'\linear']*5
-ENV.extend([r'\envA']*4)
-WORK_DIR = [r'D:\dev\replays\work_data\recall']*5
-WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
+# FRAME_RATE = [10]*5 #Hz
+# FRAME_RATE.extend([20]*4)
+# MOUSE = [3, 6, 6, 3, 0, 4, 4, 1, 1]
+# CAGE = [40, 40, 38, 38, 38, 6, 7, 11, 13]
+# ENV = [r'\linear']*5
+# ENV.extend([r'\envA']*4)
+# WORK_DIR = [r'D:\dev\replays\work_data\recall']*5
+# WORK_DIR.extend([r'D:\dev\replays\work_data\two_environments']*4)
 
 # L shape parameters
-# FRAME_RATE = [20]*4 #Hz
-# MOUSE = [4, 4, 1, 1]
-# CAGE = [6, 7, 11, 13]
-# ENV= [r'\envB']*4
-# WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
+FRAME_RATE = [20]*4 #Hz
+MOUSE = [4, 4, 1, 1]
+CAGE = [6, 7, 11, 13]
+ENV= [r'\envB']*4
+WORK_DIR = [r'D:\dev\replays\work_data\two_environments']*4
 
 WINDOW = 0.2 #sec
 NUMBER_OF_PERMUTATIONS = 500
@@ -92,8 +92,8 @@ def count_SCE_participation_in_all_segments(segments, SCE_masks, frame_rate):
     SCE_counter =[]
     number_of_segments = len(segments)
     for i in range(number_of_segments):
-        SCE_counter.append(count_SCE_participation_per_neuron(segments[i],
-                                                              SCE_masks[i], frame_rate))
+        SCE_counter.append(count_SCE_participation_per_neuron(
+                            segments[i], SCE_masks[i], frame_rate))
     SCE_counter = np.vstack(SCE_counter)
     number_of_SCE_activations = np.sum(SCE_counter, axis=0)
 
@@ -104,18 +104,20 @@ def plot_segment_activity(segment, SCE_mask, frame_rate, mouse_name):
     frames_per_window = int(WINDOW * frame_rate)
     number_of_possible_SCE = len(SCE_mask)
 
-    f1, axx1 = subplots(1, 2, sharey=True)
-    active_cells = np.sum(segment[0], axis=1) > 0
-    axx1[0].matshow(segment[0][active_cells, :],
-                   interpolation='none', aspect='auto')
-    axx1[0].set_title('Edge activity', fontsize=25)
-    axx1[0].set_xlabel('Time', fontsize=25)
-    axx1[0].set_ylabel('Neuron number', fontsize=25)
-    axx1[1].matshow(segment[1][active_cells, :],
-                   interpolation='none', aspect='auto')
-    axx1[1].set_title('Run activity', fontsize=25)
-    axx1[1].set_xlabel('Time', fontsize=25)
+    # f1, axx1 = subplots(2, 1, sharex=True)
+    gs = gridspec.GridSpec(3, 1)
+    axx1 = []
+    axx1.append(subplot(gs[0:2, :]))
+    axx1.append(subplot(gs[2, :]))
 
+    active_cells = np.sum(segment[0], axis=1) > 0
+    axx1[0].matshow(segment[0][active_cells, :] > 0,
+                   interpolation='none', aspect='auto', cmap='gray')
+    axx1[0].set_title('Edge activity', fontsize=25)
+    axx1[0].set_ylabel('Neuron number', fontsize=25)
+    axx1[1].plot(np.sum(segment[0][active_cells, :] > 0, axis=0))
+    axx1[1].set_xlabel('Time', fontsize=22)
+    axx1[1].set_ylabel('Summed activity', fontsize=25)
 
     for frame in range(number_of_possible_SCE):
         if SCE_mask[frame]:
@@ -126,25 +128,27 @@ def plot_segment_activity(segment, SCE_mask, frame_rate, mouse_name):
             active_neurons = np.sum(SCE_activity, axis=1) > 0
             run_activity = np.sum(segment[1][active_neurons, :] > 0)
             if run_activity > 5:
-                ind_neuron_sort = np.argsort(np.argmax(segment[1][active_neurons, :], axis=1))
+                ind_neuron_sort = np.argsort(
+                    np.argmax(segment[1][active_neurons, :], axis=1))
                 f, axx = subplots(1, 2, sharey=True)
-                axx[0].matshow(SCE_activity[active_neurons, :][ind_neuron_sort, :],
-                               interpolation='none', aspect='auto')
+                axx[0].matshow(
+                    SCE_activity[active_neurons, :][ind_neuron_sort, :] > 0,
+                    interpolation='none', aspect='auto', cmap='gray')
                 axx[0].set_title('SCE activity')
-                axx[1].matshow(segment[1][active_neurons, :][ind_neuron_sort, :],
-                               interpolation='none', aspect='auto')
+                axx[1].matshow(
+                    segment[1][active_neurons, :][ind_neuron_sort, :] > 0,
+                    interpolation='none', aspect='auto', cmap='gray')
                 axx[1].set_title('Run activity')
                 f.suptitle(mouse_name)
                 f.show()
-                savefig(mouse_name, format='pdf')
+                savefig(mouse_name + '.pdf')
 
     for i in range(2):
-        for xtick in axx1[i].xaxis.get_top_ticks():
-           xtick.label.set_fontsize(25)
+        for xtick in axx1[i].xaxis.get_major_ticks():
+            xtick.label2.set_fontsize(22)
+            xtick.label1.set_fontsize(22)
         for ytick in axx1[i].yaxis.get_major_ticks():
-            ytick.label.set_fontsize(25)
-    f1.show()
-    savefig(mouse_name, format='png')
+            ytick.label.set_fontsize(22)
     return
 
 def plot_SCE_covarage(segment, SCE_mask, p_r_s, frame_rate):
@@ -316,15 +320,16 @@ def main():
             chance_SCE_activation = \
                 calculte_SCE_chance_level(concatenated_edge_segments, FRAME_RATE[i])
 
-            SCE_masks = find_SCE_in_segments(events_segments_before,
-                                             chance_SCE_activation, FRAME_RATE[i])
+            SCE_masks = find_SCE_in_segments(
+                events_segments_before,chance_SCE_activation, FRAME_RATE[i])
             plot_all_SCE_segments(events_segments_before, SCE_masks,
                                   FRAME_RATE[i],
                                   'C%dM%d environment %s session %s'
-                                  % (CAGE[i], mouse, ENV[i][-4], day))
+                                  % (CAGE[i], mouse, ENV[i][-1], day))
 
             neurons_counter, count_run = \
-                count_neurons_in_all_SCEs(events_segments_before, SCE_masks, FRAME_RATE[i])
+                count_neurons_in_all_SCEs(events_segments_before, SCE_masks,
+                                          FRAME_RATE[i])
 
             neurons_counter_all_mice.append(neurons_counter)
             count_run_all_mice.append(count_run)
@@ -338,7 +343,7 @@ def main():
     #          count_run_all_mice = count_run_all_mice,
     #          relevant_indices =relevant_indices)
 
-    np.savez('SCE_analysis_Linear',
+    np.savez('SCE_analysis_Lshape',
              neurons_counter_all_mice=neurons_counter_all_mice,
              count_run_all_mice=count_run_all_mice,
              relevant_indices=relevant_indices)
