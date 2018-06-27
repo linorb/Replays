@@ -20,6 +20,7 @@ NUMBER_OF_BINS = 24
 SPACE_BINNING = 2
 NUMBER_OF_PERMUTATIONS = 1000
 
+
 def load_session_data(session_dir, cell_registration, session_index):
     # Load events, traces, and behavioral data (my_mvmt) for entire session
     events_filename = 'finalEventsMat.mat'
@@ -40,6 +41,7 @@ def load_session_data(session_dir, cell_registration, session_index):
     events = order_events_into_trials(all_events, frame_log)
 
     return events, movement_data
+
 
 def create_bucket_training_data(events_divided_to_trials,
                                 bucket_trials_indices):
@@ -63,6 +65,7 @@ def create_bucket_training_data(events_divided_to_trials,
 
     return concatenated_bins, concatenated_events
 
+
 def count_edge_bins(bins, edge_bins):
     edge_bins_mask = np.zeros_like(bins, dtype=bool)
     for b in edge_bins:
@@ -71,6 +74,7 @@ def count_edge_bins(bins, edge_bins):
     number_of_edge_bins = sum(edge_bins_mask)
 
     return number_of_edge_bins, edge_bins_mask
+
 
 def test_bucket_trial(events, p_neuron_bin, edge_bins):
     # Decode by using maximum-likelihood decoder for two environments a bucket
@@ -128,7 +132,6 @@ def test_bucket_trial(events, p_neuron_bin, edge_bins):
     return statistics, decoded_bins, decoded_env
 
 
-
 def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin,
                                                edge_bins,
                                                correct_decoding_percentage,
@@ -157,6 +160,7 @@ def calculate_p_val_for_correct_decoding_trial(events, p_neuron_bin,
 
     return p_val
 
+
 def plot_two_env_histogram(decoded_bins, decoded_env, correct_env_name):
     env_A_mask = decoded_env == 0
     env_B_mask = decoded_env == 1
@@ -177,6 +181,7 @@ def plot_two_env_histogram(decoded_bins, decoded_env, correct_env_name):
     f.show()
 
     return
+
 
 def plot_decoded_bins(decoded_bins, decoded_env, correct_env_name):
     envA_bins = np.zeros_like(decoded_bins)
@@ -214,6 +219,7 @@ def plot_decoded_bins(decoded_bins, decoded_env, correct_env_name):
     f.show()
 
     return
+
 
 def plot_decoded_bin_vs_number_of_active_cells(decoded_bins, decoded_env,
                                                number_of_events_per_frame,

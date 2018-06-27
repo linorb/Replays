@@ -77,6 +77,7 @@ def load_session_data(session_dir):
 
     return events, traces, movement_data, place_cells, p_r_s
 
+
 def calculate_conditional_activity_probability(events_segments):
     # Calculate conditional probability for events in segments of activity.
     # Args:
@@ -126,6 +127,7 @@ def calculate_conditional_activity_probability(events_segments):
 
     return p_edge_run, p_edge_non_run, p_edge
 
+
 def create_segments_for_run_epochs_and_edges_entire_session(activity,
                                                             movement_data,
                                                             segment_type,
@@ -160,7 +162,6 @@ def create_segments_for_run_epochs_and_edges_entire_session(activity,
         session_segments.extend(trial_segments)
 
     return session_segments
-
 
 
 def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
@@ -244,6 +245,7 @@ def create_segments_for_run_epochs_and_edges_for_trial(events, bins,
 
     return segments_activity
 
+
 def t_test_for_deppendent_smaples(a, b):
     # Calculate t test for difference. omit "nan"s
     nan_inds = np.isnan(b) | np.isnan(a)
@@ -256,6 +258,7 @@ def t_test_for_deppendent_smaples(a, b):
     pval = scipy.stats.t.cdf(tt, len(A) - 1)
 
     return tt, 1-pval
+
 
 def plot_segment_activity(events_segment, trace_segment):
     # Plot the traces and events of specific segment, i.e only the neurons
@@ -307,6 +310,7 @@ def plot_segment_activity(events_segment, trace_segment):
 
     return
 
+
 def plot_random_segment_activities(events_segments, trace_segments,
                                    number_of_segments_to_plot):
     number_of_segments = len(events_segments)
@@ -319,6 +323,7 @@ def plot_random_segment_activities(events_segments, trace_segments,
 
     return
 
+
 def normalize_trace_segment(trace_segment):
     number_of_traces = len(trace_segment[0])
 
@@ -330,6 +335,7 @@ def normalize_trace_segment(trace_segment):
                                                    axis=1)[:,None]
 
     return normalize_segment
+
 
 def main():
     p_value = {}
