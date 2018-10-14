@@ -101,6 +101,7 @@ def count_SCE_participation_in_all_segments(segments, SCE_masks, frame_rate):
 
 def plot_segment_activity(segment, SCE_mask, frame_rate, mouse_name):
     # segmet is a list size 2: segment[0] is edge epoch, segment[1] is run epoch
+
     frames_per_window = int(WINDOW * frame_rate)
     number_of_possible_SCE = len(SCE_mask)
 
@@ -119,6 +120,7 @@ def plot_segment_activity(segment, SCE_mask, frame_rate, mouse_name):
     axx1[1].set_xlabel('Time', fontsize=22)
     axx1[1].set_ylabel('Summed activity', fontsize=25)
 
+
     for frame in range(number_of_possible_SCE):
         if SCE_mask[frame]:
             axx1[0].axvline(frame, color='red')
@@ -127,7 +129,7 @@ def plot_segment_activity(segment, SCE_mask, frame_rate, mouse_name):
             SCE_activity = segment[0][:, frame:frame + frames_per_window]
             active_neurons = np.sum(SCE_activity, axis=1) > 0
             run_activity = np.sum(segment[1][active_neurons, :] > 0)
-            if run_activity > 5:
+            if run_activity > 5 | True:
                 ind_neuron_sort = np.argsort(
                     np.argmax(segment[1][active_neurons, :], axis=1))
                 f, axx = subplots(1, 2, sharey=True)
@@ -228,20 +230,13 @@ def find_SCE_in_full_epoch(events, chance_activation, frame_rate):
 
 
 def calculte_SCE_chance_level(events, frame_rate):
-    # Shuffle the events time for each neuron separately, and calculate the
-    # chance level for number of active cells within a time window
-    # Recommendation: the input events for this function, should be from all
-    # rest epochs
+    # Calculate the SCE chance level by the std of the events count in a window
 
-    events_count = []
-    for i in range(NUMBER_OF_PERMUTATIONS):
-        current_event_permutation = shuffle_events_times(events)
-        events_count.extend(count_events_in_sliding_window(
-                            current_event_permutation, frame_rate))
+    events_count = count_events_in_sliding_window(
+        events, frame_rate)
+    events_count_std = np.std(events_count)
+    chance_activation = 3 * events_count_std
 
-    hist, edges = np.histogram(events_count, normed=True)
-    pdf = np.cumsum(hist)*(edges[1])
-    chance_activation = edges[np.where(pdf >= 1-ALPHA)[0][0] + 1]
     return chance_activation
 
 def count_events_in_sliding_window(events, frame_rate):
