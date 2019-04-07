@@ -230,13 +230,14 @@ def find_SCE_in_full_epoch(events, chance_activation, frame_rate):
 
 
 def calculte_SCE_chance_level(events, frame_rate):
-    # Calculate the SCE chance level by the std of the events count in a window
+    # Calculate the SCE chance level by the top 5% of the events count in a window
 
     events_count = count_events_in_sliding_window(
         events, frame_rate)
-    events_count_std = np.std(events_count)
-    chance_activation = 3 * events_count_std
-
+    max_events = int(np.max(events_count))
+    [count, bins] = np.histogram(events_count, bins=max_events+1)
+    chance_activation = np.flip(bins)[np.argwhere(np.cumsum(np.flip(count)/float(np.sum(count))) < 0.05)[-1]+1]
+    
     return chance_activation
 
 def count_events_in_sliding_window(events, frame_rate):
